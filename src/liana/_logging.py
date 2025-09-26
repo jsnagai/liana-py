@@ -4,14 +4,21 @@ from types import ModuleType
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 
-def _logg(message, level='info', verbose=False):
+def _logg(message: str, level: str | None = 'info', verbose: bool = False):
     """
     Log a message with a specified logging level.
 
-    Args:
-        message (str): The message to log.
-        level (int or None): The logging level for the message (default is None).
-            If None or False, no logging is performed.
+    Parameters
+    ----------
+
+    message
+        The message to log.
+    level
+        The logging level for the message (default is 'info'). Accepted levels
+        are 'warn' or 'info', any other value will result in no logging.
+    verbose
+        Controls whether the message is logged or not.
+
     """
     if verbose:
         if level == "warn":
