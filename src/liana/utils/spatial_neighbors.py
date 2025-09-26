@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.typing import ArrayLike
 from anndata import AnnData
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import normalize
@@ -24,18 +25,18 @@ def _linear(distance_mtx, bandwidth):
 
 @d.dedent
 def spatial_neighbors(adata: AnnData,
-                      bandwidth=None,
-                      cutoff=0.1,
-                      max_neighbours=100,
-                      kernel='gaussian',
-                      set_diag=False,
-                      zoi=0,
-                      standardize=False,
-                      reference=None,
-                      spatial_key=K.spatial_key,
-                      key_added=K.spatial_key,
-                      inplace=V.inplace
-                      ):
+                      bandwidth: float = None,
+                      cutoff: float = 0.1,
+                      max_neighbours: int = 100,
+                      kernel: str = 'gaussian',
+                      set_diag: bool = False,
+                      zoi: float = 0,
+                      standardize: bool = False,
+                      reference: ArrayLike = None,
+                      spatial_key: str = K.spatial_key,
+                      key_added: str = K.spatial_key,
+                      inplace: bool = V.inplace
+                      ) -> np.array | None:
     """
     Generate spatial connectivity weights using Euclidean distance.
 
@@ -83,6 +84,14 @@ def spatial_neighbors(adata: AnnData,
     Otherwise, modifies the ``adata`` object with the following key:
         - :attr:`anndata.AnnData.obsp` ``['{key_added}_connectivities']`` with the aforementioned array
 
+    Raises
+    ------
+    ValueError
+        If no ``cutoff`` or ``bandwith`` are provided
+    AssertionError
+        If the provided ``spatial_key`` is not in ``adata.obs`` or if ``kernel``
+        function is not valid.
+
     """
     if cutoff is None:
         raise ValueError("`cutoff` must be provided!")
@@ -120,7 +129,7 @@ def spatial_neighbors(adata: AnnData,
         dist.data = _exponential(dist.data, bandwidth)
     elif kernel == 'linear':
         dist.data = _linear(dist.data, bandwidth)
-    else:
+    else: # XXX: Redudndant with check above?
         raise ValueError("Please specify a valid family to generate connectivity weights")
 
     if not set_diag:
