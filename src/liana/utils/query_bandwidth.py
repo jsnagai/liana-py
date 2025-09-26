@@ -1,4 +1,5 @@
 import numpy as np
+from matplotlib.figure import Figure
 from pandas import DataFrame
 from plotnine import aes, geom_line, geom_point, ggplot, theme_bw, xlab, ylab
 from sklearn.neighbors import BallTree
@@ -9,7 +10,7 @@ def query_bandwidth(coordinates: np.ndarray,
                     end: int = 500,
                     interval_n: int = 50,
                     reference: np.ndarray = None
-                    ):
+                    ) -> tuple[Figure, DataFrame]:
     """
     Query the bandwidth (maximum distance) at which the average number of neighbors is maximized.
 
@@ -32,6 +33,7 @@ def query_bandwidth(coordinates: np.ndarray,
     A `plotnine` plot and a `pandas` DataFrame with the following columns:
         - `bandwith`: the bandwidth (maximum distance) at which the average number of neighbors is maximized.
         - `neighbours`: the average number of neighbors at the specified bandwidth.
+
     """
     tree = BallTree(coordinates, metric='euclidean')
     df = DataFrame()
