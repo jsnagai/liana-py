@@ -10,7 +10,6 @@ def _logg(message: str, level: str | None = 'info', verbose: bool = False):
 
     Parameters
     ----------
-
     message
         The message to log.
     level
@@ -28,6 +27,26 @@ def _logg(message: str, level: str | None = 'info', verbose: bool = False):
 
 
 def _check_if_installed(package_name: str, custom_error_message: str = None) -> ModuleType:
+    """
+    Checks whether a package is installed in the current environment.
+
+    Parameters
+    ----------
+    package_name
+        The name of the package.
+    custom_error_message
+        Custom error message to display in case the package could not be found.
+
+    Returns
+    -------
+    The imported module.
+
+    Raises
+    ------
+    ImportError
+        If the package could not be found/imported.
+
+    """
     try:
         imported_module = __import__(package_name)
         return imported_module
