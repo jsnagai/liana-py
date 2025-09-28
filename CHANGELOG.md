@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.6.1 (28.09.2025)
+- Comply with AnnData CSR matrix changes
+- Bump Python version to <=3.13
+
 ## 1.6.0 (09.07.2025)
 
 - Adapted and bumped requirements to decopler-py \>=2.0.0 \| PR #178 by
