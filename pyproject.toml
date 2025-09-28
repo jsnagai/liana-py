@@ -4,7 +4,7 @@ requires = [ "hatchling" ]
 
 [project]
 name = "liana"
-version = "1.6.0"
+version = "1.6.1"
 description = "LIANA+: a one-stop-shop framework for cell-cell communication"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -52,7 +52,7 @@ optional-dependencies.dev = [
 ]
 
 optional-dependencies.extras = [
-  "decoupler>=1.6.0",
+  "decoupler>=1.6.1",
   "omnipath>=1.0.6",
   "pydeseq2>=0.3.5",
   "cell2cell",
@@ -63,7 +63,7 @@ optional-dependencies.extras = [
   "mofapy2>=0.7.0",
   "requests>=2.25.1",
   "corneto==0.9.1-alpha.6",
-  "cvxpy-base>=1.6.0",
+  "cvxpy-base>=1.6.1",
   "PySCIPOpt>=5.2.1",
 ]
 
