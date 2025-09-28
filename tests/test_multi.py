@@ -1,4 +1,3 @@
-import cell2cell as c2c
 import numpy as np
 import pandas as pd
 
@@ -12,6 +11,7 @@ adata = generate_toy_adata()
 
 def test_to_tensor_c2c():
     """Test to_tensor_c2c."""
+    import cell2cell as c2c
     liana_res = sample_lrs(by_sample=True)
 
     liana_dict = to_tensor_c2c(liana_res=liana_res,

@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from anndata import AnnData
+from scipy.sparse import csr_matrix
 
 from liana.utils.interpolate_adata import interpolate_adata
 
@@ -9,7 +10,7 @@ def create_test_adata(n_cells, n_genes, spatial_key='spatial'):
     """
     Helper function to create a test AnnData object.
     """
-    X = np.random.rand(n_cells, n_genes)
+    X = csr_matrix(np.random.rand(n_cells, n_genes))
     obsm = {spatial_key: np.random.rand(n_cells, 2)}
     adata = AnnData(X, obsm=obsm)
     adata.layers['some_layer'] = X
