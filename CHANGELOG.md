@@ -1,6 +1,7 @@
 # Changelog
 
 ## 1.6.1 (28.09.2025)
+
 - Comply with AnnData CSR matrix changes
 - Bump Python version to <=3.13
 
