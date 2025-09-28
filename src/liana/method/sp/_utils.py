@@ -1,7 +1,7 @@
 import numpy as np
 from anndata import AnnData
 from pandas import Series
-from scipy.sparse import csr_matrix, hstack, isspmatrix_csr
+from scipy.sparse import csr_matrix, hstack
 
 
 def _add_complexes_to_var(adata, entities, complex_sep='_'):
@@ -22,8 +22,9 @@ def _add_complexes_to_var(adata, entities, complex_sep='_'):
                 X = new_array
             else:
                 X = hstack((X, new_array))
+            X = csr_matrix(X)
 
-    adata = AnnData(X=hstack((adata.X, X)),
+    adata = AnnData(X=hstack((adata.X, X)).tocsr(),
                     obs=adata.obs,
                     var=adata.var,
                     obsm=adata.obsm,
@@ -31,10 +32,6 @@ def _add_complexes_to_var(adata, entities, complex_sep='_'):
                     obsp=adata.obsp,
                     uns = adata.uns,
                     )
-
-    if not isspmatrix_csr(adata.X):
-        adata.X = adata.X.tocsr()
-
     return adata
 
 
