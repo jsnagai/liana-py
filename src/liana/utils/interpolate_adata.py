@@ -11,11 +11,12 @@ from liana.method._pipe_utils._pre import _choose_mtx_rep
 def interpolate_adata(target: AnnData,
                       reference: AnnData,
                       spatial_key: str,
-                      layer=V.layer,
-                      use_raw=V.use_raw,
+                      layer: str = V.layer,
+                      use_raw: bool = V.use_raw,
                       method: str = 'linear',
                       fill_value: float = 0,
-                      verbose=V.verbose) -> AnnData:
+                      verbose: bool = V.verbose
+                      ) -> AnnData:
     """
     Interpolates spatial data from a target AnnData object to a reference AnnData object based on spatial coordinates.
 
@@ -39,6 +40,7 @@ def interpolate_adata(target: AnnData,
     Returns
     -------
     AnnData: A new AnnData object with the same metadata as the reference but with interpolated spatial data in `.X`.
+
     """
     target_coords = target.obsm[spatial_key]
     reference_coords = reference.obsm[spatial_key]
