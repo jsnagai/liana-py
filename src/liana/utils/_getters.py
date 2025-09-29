@@ -8,24 +8,30 @@ from liana._docs import d
 
 
 @d.dedent
-def get_factor_scores(adata:AnnData | MuData,
+def get_factor_scores(adata: AnnData | MuData,
                       obsm_key: str = None,
-                      obs_keys: str | None = None):
+                      obs_keys: str | None = None
+                      ) -> pd.DataFrame:
     """
     Extract factor scores from an AnnData object.
 
     Parameters
     ----------
     %(adata)s
-    obsm_key: str
+    obsm_key
         Key to use when extracting factor scores from `adata.obsm`
-    obs_keys: list
+    obs_keys
         List of keys to use when extracting metadata from `adata.obs`
         If None, no metadata is extracted. Default is None.
 
     Returns
     -------
     Returns a pandas DataFrame with the factor scores.
+
+    Raises
+    ------
+    ValueError
+        If `obsm_key` not in `.obsm`
 
     """
     if obsm_key not in adata.obsm.keys():
@@ -52,27 +58,37 @@ def get_variable_loadings(adata: AnnData | MuData,
                           var_names:list = None,
                           pair_names:list = None,
                           drop_columns:bool = True
-                          ):
+                          ) -> pd.DataFrame:
     """
     Extract variable loadings from an AnnData object.
 
     Parameters
     ----------
     %(adata)s
-    varm_key: str
+    varm_key
         Key to use when extracting variable loadings from `mdata.varm`
-    view_sep: str
+    view_sep
         Separator to use when splitting view:variable names into view and variable
-    variable_sep: str
-        Separator to use when splitting variable names into `var_names` ('ligand_complex' and 'receptor_complex' by default)
-    pair_sep: str
-        Separator to use when splitting view names into `pair_names` ('source' and 'target' by default)
-    drop_columns: bool
+    variable_sep
+        Separator to use when splitting variable names into `var_names`
+    pair_sep
+        Separator to use when splitting view names into `pair_names`
+    var_names
+        Variable names given to the splitted variable ('ligand_complex' and 'receptor_complex' by default)
+    pair_names
+        Variable names given to the splitted pair ('source' and 'target' by default)
+    drop_columns
         If True, drop the `view:variable` column
 
     Returns
     -------
     Returns a pandas DataFrame with the variable loadings for the specified index.
+
+    Raises
+    ------
+    ValueError
+        If `varm_key` not found in `.varm`
+
     """
     if varm_key not in adata.varm.keys():
         raise ValueError(f'{varm_key} not found in adata.varm')
