@@ -1,7 +1,6 @@
-import numpy as np
 from anndata import AnnData
 from scipy.interpolate import griddata
-from scipy.sparse import csr_matrix, lil_matrix
+from scipy.sparse import csr_matrix
 
 from liana._constants import DefaultValues as V
 from liana._docs import d
@@ -44,9 +43,7 @@ def interpolate_adata(target: AnnData,
     target_coords = target.obsm[spatial_key]
     reference_coords = reference.obsm[spatial_key]
 
-    X = lil_matrix((reference.shape[0], target.shape[1]), dtype=np.float32)
-
-    ad = AnnData(X=X,
+    ad = AnnData(X=None,
                  uns=reference.uns,
                  obs=reference.obs,
                  obsm=reference.obsm,

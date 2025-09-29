@@ -32,6 +32,11 @@ data/
 docs/_build/*
 docs/jupyter_execute/*
 docs/generated/*
+*.h5ad
+*.gz
+*.db
+*.pkl
+*.png
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

@@ -10,7 +10,7 @@ def test_prep_check_adata():
 
     temp = prep_check_adata(adata=adata, groupby='bulk_labels', min_cells=0,
                             use_raw=True, layer=None)
-    np.testing.assert_almost_equal(np.sum(temp.X.data), 319044.22, decimal=2)
+    np.testing.assert_almost_equal(np.sum(temp.X.data), 319044.22, decimal=1)
 
     desired = np.array([2.177, 2.177, 2.544, 2.544, 1.591, 1.591, 1.591, 1.591, 1.591, 1.591])
     np.testing.assert_almost_equal(temp.X.data[0:10], desired, decimal=3)

@@ -4,7 +4,7 @@ requires = [ "hatchling" ]
 
 [project]
 name = "liana"
-version = "1.6.0"
+version = "1.6.1"
 description = "LIANA+: a one-stop-shop framework for cell-cell communication"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -24,7 +24,7 @@ authors = [
   { name = "Julio Saez-Rodriguez"},
 
 ]
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.10,<3.14"
 classifiers = [
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.10",
@@ -52,17 +52,18 @@ optional-dependencies.dev = [
 ]
 
 optional-dependencies.extras = [
-  "decoupler>=1.6.0",
+  "decoupler>=1.6.1",
   "omnipath>=1.0.6",
   "pydeseq2>=0.3.5",
   "cell2cell",
+  "gseapy>=1.1.0",
   "kneed>=0.7.0",
   "muon",
   "mofax",
   "mofapy2>=0.7.0",
   "requests>=2.25.1",
   "corneto==0.9.1-alpha.6",
-  "cvxpy-base>=1.6.0",
+  "cvxpy-base>=1.6.1",
   "PySCIPOpt>=5.2.1",
 ]
 
@@ -103,7 +104,7 @@ scripts.clean = "git clean -fdX -- {args:docs}"
 
 [[tool.hatch.envs.hatch-test.matrix]]
 deps = [ "stable" ]
-python = [ "3.10", "3.12" ]
+python = [ "3.10", "3.13" ]
 
 [tool.hatch.envs.hatch-test]
 features = [ "test", "extras" ]
