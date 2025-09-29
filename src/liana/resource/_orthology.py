@@ -61,27 +61,27 @@ def _generate_orthologs(data, column, map_dict, one_to_many):
 
 
 def translate_column(
-    resource,
-    map_df,
-    column,
-    replace=True,
-    one_to_many=1,
-    ):
+    resource: pd.DataFrame,
+    map_df: pd.DataFrame,
+    column: str,
+    replace: bool = True,
+    one_to_many: int = 1,
+    ) -> pd.DataFrame:
     """
     Generate orthologs for a given column in a DataFrame.
 
     Parameters
     ----------
-    resource : pandas.DataFrame
+    resource
         Input DataFrame.
-    map_df : pandas.DataFrame
+    map_df
         DataFrame with orthology mappings, where the first column is the source and the second column is the target for mapping.
-    column : str
+    column
         Column name to translate.
-    replace : bool, optional
+    replace
         Whether to replace the original column with the translated values. Default is True.
         If False, it will create a new column with the prefix "orthology_".
-    one_to_many : int, optional
+    one_to_many
         Maximum number of orthologs allowed per gene. Default is 1.
 
     Details
@@ -93,6 +93,11 @@ def translate_column(
     Returns
     -------
     Resulting DataFrame with translated column.
+
+    Raises
+    ------
+    ValueError
+        If the `mapping_df` does not contain 'source' and 'target' columns or `one_to_many` is not an integer
 
     """
     if not isinstance(one_to_many, int):
@@ -128,17 +133,22 @@ def translate_column(
 
 
 # function that loops over columns and applies translate_column
-def translate_resource(resource, map_df, columns=None, **kwargs):
+def translate_resource(
+        resource: pd.DataFrame,
+        map_df: pd.DataFrame,
+        columns: list[str] = None,
+        **kwargs
+        ) -> pd.DataFrame:
     """
     Generate orthologs for multiple columns in a DataFrame.
 
     Parameters
     ----------
-    resource : pandas.DataFrame
+    resource
         Input DataFrame.
-    map_df : pandas.DataFrame
+    map_df
         DataFrame with orthology mappings, where the first column is the source and the second column is the target for mapping.
-    columns : list
+    columns
         List of column names to translate.
     **kwargs
         Additional arguments for `liana.utils.translate_column`.
@@ -157,28 +167,28 @@ def translate_resource(resource, map_df, columns=None, **kwargs):
     return resource
 
 
-def get_hcop_orthologs(url="https://ftp.ebi.ac.uk/pub/databases/genenames/hcop/human_mouse_hcop_fifteen_column.txt.gz",
-                       filename=None,
-                       min_evidence=3,
-                       columns = None
-                       ):
+def get_hcop_orthologs(url: str = "https://ftp.ebi.ac.uk/pub/databases/genenames/hcop/human_mouse_hcop_fifteen_column.txt.gz",
+                       filename: str = None,
+                       min_evidence: int = 3,
+                       columns: list[str] = None
+                       ) -> pd.DataFrame:
     """
     Simple function to download the HCOP file from the EBI FTP server and filter it by minimum evidence.
 
     Parameters
     ----------
-    url : str
+    url
         URL of the HCOP file. See https://ftp.ebi.ac.uk/pub/databases/genenames/hcop/ for bulk download options besides human and mouse.
-    filename : str
+    filename
         Name of the file to save the HCOP file.
-    min_evidence : int
+    min_evidence
         Minimum number of evidences to keep the interaction, where evidence is the number of orthology resources supporting the interaction.
-    columns : list
+    columns
         Columns to keep in the final DataFrame. If None, it will keep the default columns.
 
     Returns
     -------
-    mapping : pd.DataFrame
+    mapping
         DataFrame with the HCOP mapping.
 
     Details
@@ -192,6 +202,7 @@ def get_hcop_orthologs(url="https://ftp.ebi.ac.uk/pub/databases/genenames/hcop/h
 
     For more information, please visit the HCOP website: https://www.genenames.org/tools/hcop/,
     or alternatively check the bulk download FTP links page: https://ftp.ebi.ac.uk/pub/databases/genenames/hcop/
+
     """
     # check if exists
     if filename is None:
