@@ -1,5 +1,3 @@
-from collections.abc import Callable
-
 import anndata as an
 from mudata import MuData
 
@@ -12,8 +10,8 @@ def mdata_to_anndata(mdata: MuData,
                      x_mod: str, y_mod: str,
                      x_layer: str = None, y_layer: str = None,
                      x_use_raw: bool = False, y_use_raw: bool = False,
-                     x_transform: Callable = None,
-                     y_transform: Callable = None,
+                     x_transform: callable = None,
+                     y_transform: callable = None,
                      verbose: bool = True
                      ) -> an.AnnData:
     """
