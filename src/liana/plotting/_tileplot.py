@@ -1,7 +1,7 @@
-
 import anndata as ad
 import pandas as pd
 import plotnine as p9
+from matplotlib.figure import Figure
 
 from liana._constants import DefaultValues as V
 from liana._constants import Keys as K
@@ -31,7 +31,7 @@ def tileplot(adata: ad.AnnData = None,
              figure_size: tuple[float, float] = (5, 5),
              label_size: int = 12,
              return_fig: bool = V.return_fig
-             ):
+             ) -> Figure:
     """
     Tileplot interactions by source and target cells
 
@@ -60,14 +60,14 @@ def tileplot(adata: ad.AnnData = None,
     target_title
         Title for the target facet. Default is 'Target'
     %(cmap)s
+    %(figure_size)s
     label_size
         Size of the label text
-    %(figure_size)s
     %(return_fig)s
 
     Returns
     -------
-    A `plotnine.ggplot` instance
+    The resulting tileplot
 
     """
     liana_res = _prep_liana_res(adata=adata,
