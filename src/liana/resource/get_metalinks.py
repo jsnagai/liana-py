@@ -6,7 +6,7 @@ import pandas as pd
 from liana._logging import _check_if_installed, _logg
 
 
-def _download_metalinksdb(verbose=True):
+def _download_metalinksdb(verbose: bool = True) -> str:
     """
     Ensures the Metalinksdb is downloaded and available for use.
 
@@ -14,8 +14,8 @@ def _download_metalinksdb(verbose=True):
 
     Returns
     -------
-    str
-        The path to the downloaded database file.
+    The path to the downloaded database file.
+
     """
     requests = _check_if_installed("requests")
 
@@ -52,7 +52,7 @@ def get_metalinks(db_path: str | None = None,
                   hmdb_ids: list[str] | None = None,
                   uniprot_ids: list[str] | None = None,
                   source: list[str] | None = None
-                  ):
+                  ) -> pd.DataFrame:
     """
     Fetches edges of metabolite-proteins with specified annotations, applying filters if they are not None.
 
@@ -79,10 +79,13 @@ def get_metalinks(db_path: str | None = None,
         Desired HMDB IDs.
     uniprot_ids
         Desired UniProt IDs.
+    source
+        Desired source databases.
 
     Returns
     -------
     A pandas DataFrame containing the query results without the source column.
+
     """
     if db_path is None:
         db_path = _download_metalinksdb()
@@ -153,23 +156,26 @@ def get_metalinks(db_path: str | None = None,
     return df
 
 
-def get_metalinks_values(table_name, column_name, db_path: str | None = None):
+def get_metalinks_values(table_name: str,
+                         column_name: str,
+                         db_path: str | None = None
+                         ) -> list[str]:
     """
     Fetches distinct values from a specified column in a specified table.
 
     Parameters
     ----------
-    db_path : str
-        Path to the SQLite database file. If None, the database will be downloaded to the current working directory.
-    table_name : str
+    table_name
         Name of the table from which to fetch distinct values.
-    column_name : str
+    column_name
         Name of the column from which to fetch distinct values.
+    db_path
+        Path to the SQLite database file. If None, the database will be downloaded to the current working directory.
 
     Returns
     -------
-    list
-        A list of distinct values from the specified column.
+    A list of distinct values from the specified column.
+
     """
     if db_path is None:
         db_path = _download_metalinksdb()
@@ -184,14 +190,23 @@ def get_metalinks_values(table_name, column_name, db_path: str | None = None):
     return [value[0] for value in distinct_values]
 
 
-def describe_metalinks(db_path: str | None = None, return_output: bool = False):
+def describe_metalinks(db_path: str | None = None,
+                       return_output: bool = False
+                       ) -> str | None:
     """
     Prints the schema information and foreign key details for all tables in the specified SQLite database.
 
     Parameters
     ----------
-    db_path : str
+    db_path
         Path to the SQLite database file. If None, the database will be downloaded to the current working directory.
+    return_output
+        Whether to return the output or just print it.
+
+    Returns
+    -------
+    The database schema description.
+
     """
     if db_path is None:
         db_path = _download_metalinksdb()
