@@ -1,6 +1,7 @@
-import anndata
+from anndata import AnnData
 import pandas as pd
 from plotnine import aes, geom_point, ggplot, labs, theme, theme_minimal
+from matplotlib.figure import Figure
 
 from liana._constants import DefaultValues as V
 from liana._constants import Keys as K
@@ -9,19 +10,22 @@ from liana._logging import _logg
 
 
 @d.dedent
-def connectivity(adata: anndata.AnnData,
+def connectivity(adata: AnnData,
                  idx: int,
-                 spatial_key=K.spatial_key,
-                 connectivity_key=K.connectivity_key,
-                 size=1,
-                 figure_size=(5.4, 5),
-                 return_fig: bool = V.return_fig):
+                 spatial_key: str = K.spatial_key,
+                 connectivity_key: str = K.connectivity_key,
+                 size: float = 1,
+                 figure_size: tuple[float, float] = (5.4, 5),
+                 return_fig: bool = V.return_fig
+                 ) -> Figure:
     """
     Plot spatial connectivity weights.
 
     Parameters
     ----------
     %(adata)s
+    idx
+        Column index of the connectivity weights to plot.
     %(spatial_key)s
     %(connectivity_key)s
     size
@@ -31,7 +35,12 @@ def connectivity(adata: anndata.AnnData,
 
     Returns
     -------
-    A `plotnine.ggplot` instance
+    The resulting connectivity plot.
+
+    Raises
+    ------
+    AssertionError
+        If `connectivity_key` or `spatial_key` are not in `adata.obsp` or `adata.obsm` respectively.
 
     """
     assert connectivity_key in list(adata.obsp.keys())
