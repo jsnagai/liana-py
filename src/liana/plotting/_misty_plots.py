@@ -1,37 +1,39 @@
 import pandas as pd
 import plotnine as p9
+from matplotlib.figure import Figure
 
 from liana._constants import DefaultValues as V
 from liana._constants import Keys as K
 from liana._docs import d
+from liana.method.sp._misty._Misty import MistyData
 
 
 @d.dedent
-def target_metrics(misty = None,
-                   stat = None,
-                   target_metrics = None,
-                   top_n = None,
-                   ascending = False,
-                   key = None,
+def target_metrics(misty: MistyData = None,
+                   stat: str = None,
+                   target_metrics: pd.DataFrame = None,
+                   top_n: int = None,
+                   ascending: bool = False,
+                   key: callable = None,
                    filter_fun: callable = None,
-                   figure_size: tuple = (5, 5),
-                   aggregate_fun = None,
+                   figure_size: tuple[float, float] = (5, 5),
+                   aggregate_fun: callable = None,
                    return_fig: bool = V.return_fig
-                   ):
+                   ) -> Figure:
     """
     Plot target metrics.
 
     Parameters
     ----------
     %(misty)s
-    stat : str
+    stat
         Statistic to plot
     target_metrics
         A target_metrics DataFrame
     %(top_n)s
-    ascending : bool
+    ascending
         Whether to sort in ascending order
-    key : callable
+    key
         Function to use to sort the dataframe
     %(filter_fun)s
     %(aggregate_fun)s
@@ -41,6 +43,11 @@ def target_metrics(misty = None,
     Returns
     -------
     Returns a plotnine plot.
+
+    Raises
+    ------
+    ValueError
+        If the `misty` input or `stat` provided are not valid.
 
     """
     if target_metrics is not None:
@@ -80,13 +87,14 @@ def target_metrics(misty = None,
     p.draw()
 
 @d.dedent
-def contributions(misty = None,
-                  target_metrics = None,
-                  view_names: list = None,
+def contributions(misty: MistyData = None,
+                  target_metrics: pd.DataFrame = None,
+                  view_names: list[str] = None,
                   filter_fun: callable = None,
                   aggregate_fun: callable = None,
-                  figure_size: tuple = (5, 5),
-                  return_fig: bool = V.return_fig):
+                  figure_size: tuple[float, float] = (5, 5),
+                  return_fig: bool = V.return_fig
+                  ) -> Figure:
     """
     Plot view contributions per target.
 
@@ -97,6 +105,7 @@ def contributions(misty = None,
         A target_metrics DataFrame
     view_names
         A list of view names to plot
+    %(filter_fun)s
     %(aggregate_fun)s
     %(figure_size)s
     %(return_fig)s
@@ -104,6 +113,11 @@ def contributions(misty = None,
     Returns
     -------
     A plotnine plot.
+
+    Raises
+    ------
+    ValueError
+        If the `misty` input is not valid or no `view_names` provided.
 
     """
     if target_metrics is not None:
@@ -145,28 +159,31 @@ def contributions(misty = None,
 
 
 @d.dedent
-def interactions(misty= None,
-                 interactions = None,
-                 view = None,
-                 top_n = None,
-                 ascending = False,
-                 key = None,
+def interactions(misty: MistyData = None,
+                 interactions: pd.DataFrame = None,
+                 view: str = None,
+                 top_n: int = None,
+                 ascending: bool = False,
+                 key: str = None,
                  filter_fun: callable = None,
                  aggregate_fun: callable = None,
-                 figure_size: tuple = (5,5),
-                 return_fig: bool = V.return_fig):
+                 figure_size: tuple[float, float] = (5, 5),
+                 return_fig: bool = V.return_fig
+                 ) -> Figure:
     """
     Plot interaction importances.
 
     Parameters
     ----------
     %(misty)s
-    view : str
-        A view to plot
+    interactions
+        Interactions from which to plot the importance
+    view
+        A Misty view to plot
     %(top_n)s
-    ascending : bool
+    ascending
         Whether to sort interactions in ascending order
-    key : str
+    key
         Key to use when sorting interactions
     %(filter_fun)s
     %(aggregate_fun)s
@@ -176,6 +193,11 @@ def interactions(misty= None,
     Returns
     -------
     A plotnine plot.
+
+    Raises
+    ------
+    ValueError
+        If neither `misty` or `interactions` input or `view` are not provided.
 
     """
     if interactions is not None:
