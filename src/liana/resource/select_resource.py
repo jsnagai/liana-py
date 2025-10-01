@@ -40,7 +40,6 @@ def select_resource(resource_name: str = V.resource_name) -> DataFrame:
 
     return resource
 
-
 def show_resources():
     """
     Show available resources.

@@ -13,29 +13,32 @@ from liana.method._pipe_utils._pre import _choose_mtx_rep
 
 
 @d.dedent
-def nmf(adata: AnnData=None,
-        df: pd.DataFrame=None,
-        n_components: (int or None)=None,
+def nmf(adata: AnnData = None,
+        df: pd.DataFrame = None,
+        n_components: int | None = None,
         k_range: range = range(1, 11),
-        use_raw: bool=False,
-        layer: (str or None)=None,
-        inplace: bool=True,
-        verbose: bool=False,
-        **kwargs):
+        use_raw: bool = False,
+        layer: str | None = None,
+        inplace: bool = True,
+        verbose: bool = False,
+        **kwargs
+        ) -> tuple[np.ndarray, np.ndarray, pd.DataFrame | None, int] | None:
     """
     Fits NMF to an AnnData object.
 
     Parameters
     ----------
     %(adata)s
-    n_components : int, None
+    df
+        Alternative input for data as a `DataFrame`, only used if `adata` is None.
+    n_components
         Number of components to use. If None, the number of components is estimated using the elbow method.
-    k_range : range
+    k_range
         Range of components to test. Default: range(1, 10).
     %(use_raw)s
     %(layer)s
     %(inplace)s
-    **kwargs : dict
+    **kwargs
         Keyword arguments to pass to ``sklearn.decomposition.NMF``.
 
     Returns
@@ -47,6 +50,11 @@ def nmf(adata: AnnData=None,
     If n_components is None and inplace, ``errors`` and ``n_components`` will be assigned to ``adata.uns``.
     If ``df`` is provided, inplace is always False.
 
+    Raises
+    ------
+        ValueError
+            If `adata` is provided but it's not a valid instance of an `AnnData` object or neither an `AnnData` or `DataFrame` intance is provided as input
+
     """
     if adata is not None:
         if isinstance(adata, AnnData):
@@ -57,7 +65,6 @@ def nmf(adata: AnnData=None,
         X = df.values
     else:
         raise ValueError('Provide either an AnnData object or a DataFrame.')
-
 
     if n_components is None:
         errors, n_components = estimate_elbow(X, k_range=k_range, verbose=verbose, **kwargs)
