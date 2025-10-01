@@ -18,19 +18,18 @@ from liana.method._pipe_utils import _check_groupby
 
 
 @d.dedent
-def adata_to_views(
-    adata: AnnData,
-    groupby: str,
-    sample_key: str,
-    obs_keys: list = None,
-    view_sep: str = ':',
-    keep_stats: bool = False,
-    verbose: bool = False,
-    psbulk_kwargs: dict = None,
-    filter_samples_kwargs: dict = None,
-    filter_by_expr_kwargs: dict = None,
-    filter_by_prop_kwargs: dict = None,
-):
+def adata_to_views(adata: AnnData,
+                   groupby: str,
+                   sample_key: str,
+                   obs_keys: list[str] = None,
+                   view_sep: str = ':',
+                   keep_stats: bool = False,
+                   verbose: bool = False,
+                   psbulk_kwargs: dict = {},
+                   filter_samples_kwargs: dict = {},
+                   filter_by_expr_kwargs: dict = {},
+                   filter_by_prop_kwargs: dict = {},
+                   ) -> MuData:
     """
     Converts an AnnData object to a MuData object with views that represent an aggregate for each entity in `adata.obs[groupby]`.
 
@@ -39,28 +38,20 @@ def adata_to_views(
     %(adata)s
     %(groupby)s
     %(sample_key)s
-    obs_keys:
+    obs_keys
         Column names in `adata.obs` to merge with the MuData object
-    view_sep:
+    view_sep
         Separator to use when assigning `adata.var_names` to views
-    min_count:
-        Minimum number of counts per gene per sample to be included in the pseudobulk.
-    min_total_count:
-        Minimum number of counts per sample to be included in the pseudobulk.
-    large_n:
-        Number of samples per group that is considered to be "large".
-    min_prop:
-        Minimum proportion of samples that must have a count for a gene to be included in the pseudobulk.
-    keep_stats:
+    keep_stats
         If True, keep the pseudobulk statistics in `mdata.uns['psbulk_stats']`. Default is False.
     %(verbose)s
-    psbulk_kwargs:
+    psbulk_kwargs
         Arguments to pass to `dc.pp.pseudobulk` for pseudobulking. See `decoupler` documentation for more details.
-    filter_samples_kwargs:
+    filter_samples_kwargs
         Arguments to pass to `dc.pp.filter_samples` for filtering samples. See `decoupler` documentation for more details. If None, won't filter.
-    filter_by_expr_kwargs:
+    filter_by_expr_kwargs
         Optional mapping of arguments to pass to `dc.pp.filter_by_expr` for gene filtering by expression. If None, won't filter.
-    filter_by_prop_kwargs:
+    filter_by_prop_kwargs
         Optional mapping of arguments to pass to `dc.pp.filter_by_prop` for gene filtering by proportion of cells that express the gene. If None, won't filter.
 
     Returns
@@ -75,15 +66,6 @@ def adata_to_views(
     views = tqdm(views, disable=not verbose)
 
     _check_groupby(adata=adata, groupby=groupby, verbose=verbose)
-
-    if psbulk_kwargs is None:
-        psbulk_kwargs = {}
-    if filter_samples_kwargs is None:
-        filter_samples_kwargs = {}
-    if filter_by_expr_kwargs is None:
-        filter_by_expr_kwargs = {}
-    if filter_by_prop_kwargs is None:
-        filter_by_prop_kwargs = {}
 
     padatas = {}
     if keep_stats:
@@ -153,20 +135,20 @@ def adata_to_views(
 
 @d.dedent
 def lrs_to_views(adata: AnnData,
-                 score_key: (str or None) = None,
+                 score_key: str | None = None,
                  inverse_fun: callable = V.inverse_fun,
-                 obs_keys: (list or None) = None,
+                 obs_keys: list | None = None,
                  lr_prop: float = 0.5,
-                 lr_fill: np.nan = np.nan,
-                 lrs_per_view:int = 20,
-                 lrs_per_sample:int = 10,
+                 lr_fill: float = np.nan,
+                 lrs_per_view: int = 20,
+                 lrs_per_sample: int = 10,
                  samples_per_view: int = 3,
-                 min_variance:int = 0,
-                 min_var_nbatches = 1,
-                 batch_key=None,
+                 min_variance: int = 0,
+                 min_var_nbatches: int = 1,
+                 batch_key: str = None,
                  lr_sep: str = V.lr_sep,
-                 cell_sep: str='&',
-                 var_sep: str=':',
+                 cell_sep: str = '&',
+                 var_sep: str = ':',
                  uns_key: str = K.uns_key,
                  sample_key: str = 'sample',
                  source_key: str = P.source,
@@ -174,7 +156,7 @@ def lrs_to_views(adata: AnnData,
                  ligand_key: str = P.ligand_complex,
                  receptor_key: str = P.receptor_complex,
                  verbose: bool = V.verbose
-                 ):
+                 ) -> MuData:
     """
     Converts a LIANA result to a MuData object with views that represent an aggregate for each entity in `adata.obs[groupby]`.
 
@@ -190,20 +172,20 @@ def lrs_to_views(adata: AnnData,
         Reflects the minimum required proportion of samples for an interaction to be considered for building the views.
     lr_fill
         Value to fill in for interactions that are not present in a view. Default is `np.nan`.
-    lrs_per_sample
-        Reflects the minimum required number of interactions in a sample to be considered when building a specific view.
     lrs_per_view
         Reflects the minimum required number of interactions in a view to be considered for building the views.
+    lrs_per_sample
+        Reflects the minimum required number of interactions in a sample to be considered when building a specific view.
     samples_per_view
         Reflects the minimum required samples to keep a view.
     min_variance
         Reflects the minimum required variance across samples for each interaction in each view.
         NaNs are ignored when computing the variance.
+    min_var_nbatches
+        Reflect the minimum number of batches (>=) that must have a variance above `min_variance` for an interaction to be included in the view.
     batch_key
         Key in `adata.obs` that represents the batch information. Used solely when computing the variance.
         If batch_key is not `None`, the variance is computed per batch, and the ``
-    min_var_nbatches
-        Reflect the minimum number of batches (>=) that must have a variance above `min_variance` for an interaction to be included in the view.
     %(lr_sep)s
     cell_sep
         Separator to use for the cell names in the views.
@@ -220,6 +202,11 @@ def lrs_to_views(adata: AnnData,
     Returns
     -------
     Returns a MuData object with views that represent an aggregate for each entity in `adata.obs[groupby]`.
+
+    Raises
+    ------
+    ValueError
+        If any of the provided keys are not found in the corresponding `adata` view.
 
     """
     if (sample_key not in adata.obs.columns) or (sample_key not in adata.uns[uns_key].columns):
@@ -312,14 +299,12 @@ def lrs_to_views(adata: AnnData,
 
     return mdata
 
-
 def _dataframe_to_anndata(df):
     obs = pd.DataFrame(index=df.columns)
     var = pd.DataFrame(index=df.index)
     X = np.array(df.values).T
 
     return AnnData(X=X, obs=obs, var=var, dtype=np.float32)
-
 
 def _remove_mod_var(mdata, markers, view_sep, var_column):
     for current_mod in mdata.mod.keys():
@@ -343,28 +328,30 @@ def _remove_mod_var(mdata, markers, view_sep, var_column):
 
 @d.dedent
 def filter_view_markers(mdata: MuData,
-                        markers: dict,
+                        markers: dict[str, list[str]],
                         view_sep: str = ':',
-                        var_column: str = 'highly_variable',
-                        inplace: bool =False
-                        ):
+                        var_column: str | None = 'highly_variable',
+                        inplace: bool = False
+                        ) -> MuData | None:
     """
     Used for removing potential cell type marker genes found in the background of other views and thought to be contamination.
-
     In each view, sets highly variable genes to False if they are in the markers dict for another view, but not if they are in the markers for the same view.
-
 
     Parameters
     ----------
     %(mdata)s
-    markers :class:`dict`
+    markers
         Dictionary with markers for each view. Keys are the views and values are lists of markers. Can contain markers for views that are not in mdata.mod.keys().
-    view_sep :class:`str`, optional
+    view_sep
         Separator between view and gene names. Defaults to ':'.
-    var_column :class:`str`, optional
+    var_column
         Column in mdata.mod['some_view'].var that contains the highly variable genes. Defaults to 'highly_variable'.
         If set to ``None``, instead of setting the hvg genes to False, the hvg genes will be removed from the view.
     %(inplace)s
+
+    Returns:
+        The filtered `mdata` instance or `None` if `inplace=True`.
+
     """
     # check if markers is a dict
     if not isinstance(markers, dict):
