@@ -102,9 +102,29 @@ class SingleViewModel:
 
 
 class RandomForestModel(SingleViewModel):
-    """Random forest model (from sklearn) using out-of-bag predictions for feature importances."""
+    """Random forest model (from sklearn) using out-of-bag predictions for feature importances. Inherits from `SingleViewModel`"""
 
-    def fit(self, y, X, predictors, k_cv=None):
+    def fit(self,
+            y: np.ndarray,
+            X: np.ndarray,
+            predictors: list[str],
+            k_cv: int = None
+            ):
+        """
+        Fits a Random Forest (RF) model.
+
+        Parameters
+        ----------
+        y
+            Target variable
+        X
+            Feature matrix
+        predictors
+            List of feature names
+        k_cv
+            Not used
+
+        """
         self.model = RandomForestRegressor(oob_score=True, random_state=self.seed, **self.kwargs)
         self.model.fit(X, y)
         self.predictions = self.model.oob_prediction_
