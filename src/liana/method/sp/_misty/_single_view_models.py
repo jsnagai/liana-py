@@ -132,13 +132,29 @@ class RandomForestModel(SingleViewModel):
 
 
 class LinearModel(SingleViewModel):
-    """
-    Linear regression model using statsmodels.OLS for feature importances, and cross_val_predict with sklearn LinearRegression for predictions.
+    """Linear regression model using `statsmodels.OLS` for feature importances, and `cross_val_predict` with `sklearn.LinearRegression` for predictions. Inherits from `SingleViewModel`"""
 
-    **kwargs are passed to statsmodels.OLS.
-    """
+    def fit(self,
+            y: np.ndarray,
+            X: np.ndarray,
+            predictors: list[str],
+            k_cv: int = None
+            ):
+        """
+        Fits a Linear Model (LM) model.
 
-    def fit(self, y, X, predictors, k_cv):
+        Parameters
+        ----------
+        y
+            Target variable
+        X
+            Feature matrix
+        predictors
+            List of feature names
+        k_cv
+            Number of cross-validation folds. If None, no cross-validation is performed.
+
+        """
         # pop n_jobs if it exists
         n_jobs = self.kwargs.pop('n_jobs', -1)
         model = LinearRegression(n_jobs=1)
@@ -158,9 +174,29 @@ class LinearModel(SingleViewModel):
 
 
 class RobustLinearModel(SingleViewModel):
-    """Robust linear regression model using statsmodels.RLM."""
+    """Robust linear regression model using `statsmodels.RLM`. Inherits from `SingleViewModel`"""
 
-    def fit(self, y, X, predictors, k_cv):
+    def fit(self,
+            y: np.ndarray,
+            X: np.ndarray,
+            predictors: list[str],
+            k_cv: int = None
+            ):
+        """
+        Fits a robust linear model.
+
+        Parameters
+        ----------
+        y
+            Target variable
+        X
+            Feature matrix
+        predictors
+            List of feature names
+        k_cv
+            Number of cross-validation folds. If None, no cross-validation is performed.
+
+        """
         X = sm.add_constant(X)
         self.predictions = self._k_fold_predict(y, X, k_cv, self._fit_robust)
         model_full = sm.RLM(y, X, **self.kwargs).fit()
@@ -168,5 +204,6 @@ class RobustLinearModel(SingleViewModel):
 
     def _fit_robust(self, y, X):
         return sm.RLM(y, X, **self.kwargs).fit()
+
     def _fit_robust(self, y, X):
         return sm.RLM(y, X, **self.kwargs).fit()
