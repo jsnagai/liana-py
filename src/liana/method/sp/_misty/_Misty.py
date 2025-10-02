@@ -15,36 +15,46 @@ from liana.method.sp._misty._single_view_models import SingleViewModel
 
 
 class MistyData(MuData):
-    """MistyData Class used to construct multi-view objects"""
+    """
+    MistyData Class used to construct multi-view objects
+    Construct a MistyData object from a dictionary of views (anndatas).
+
+    Parameters
+    ----------
+    data
+        Dictionary of views (`AnnData`s) or a `MuData` object. Note that only the `data.X` attribute is used.
+        An intra-view called "intra" is required.
+    obs
+        DataFrame of observations. If None, the obs of the intra-view is used.
+    %(spatial_key)s
+    enforce_obs
+        If True, the number of observations in each extra-view must match the intra-view.
+        Then the connectivities are stored in the .obsp attribute, while the weighted matrix is stored in .layers['weighted'].
+        If False, the connectivities are stored in the .obsm attribute, while the weighted matrix is transposed and stored in .varm['weighted'].
+    **kwargs
+        Keyword arguments passed to the MuData Super class
+
+    Attributes
+    ----------
+    view_names : list[str]
+        List of names of the different views
+    spatial_key : str
+        Key in `data.obsm` containing the spatial coordinates.
+    enforce_obs : bool
+        See parameter with the same name.
+    obs : pd.DataFrame
+        See parameter with the same name.
+
+    """
 
     @d.dedent
     def __init__(self,
-                 data:(dict | MuData),
-                 obs:(pd.DataFrame | None)=None,
-                 spatial_key:str=K.spatial_key,
-                 enforce_obs:bool=True,
+                 data: dict | MuData,
+                 obs: pd.DataFrame | None = None,
+                 spatial_key: str = K.spatial_key,
+                 enforce_obs: bool = True,
                  **kwargs
                  ):
-        """
-        Construct a MistyData object from a dictionary of views (anndatas).
-
-        Parameters
-        ----------
-        data : `dict`
-            Dictionary of views (anndatas) or a MuData object. Note that only the .X attribute is used.
-            An intra-view called "intra" is required.
-        obs : `pd.DataFrame`
-            DataFrame of observations. If None, the obs of the intra-view is used.
-        %(spatial_key)s
-        enforce_obs : `bool`, optional (default: True)
-            If True, the number of observations in each extra-view must match the intra-view.
-            Then the connectivities are stored in the .obsp attribute, while the weighted matrix is stored in .layers['weighted'].
-
-            If False, the connectivities are stored in the .obsm attribute, while the weighted matrix is transposed and stored in .varm['weighted'].
-
-        **kwargs
-            Keyword arguments passed to the MuData Super class
-        """
         if isinstance(data, MuData):
             data = data.mod
 
@@ -82,7 +92,25 @@ class MistyData(MuData):
             weights = self.mod[view_name].obsm[f"{self.spatial_key}_connectivities"].T
             self.mod[view_name].varm['weighted'] = (weights @ self.mod[view_name].X).T
 
-    def get_weighted_matrix(self, view_name, predictors=None):
+    def get_weighted_matrix(self,
+                            view_name: str,
+                            predictors: list[str] = None
+                            ) -> pd.Index | np.ndarray:
+        """
+        Returns the weighted matrix for a given set of predictors in a view.
+
+        Parameters
+        ----------
+        view_name
+            Name of the view of interest.
+        predictors
+            List of predictors from which to retrieve the weights.
+
+        Returns
+        -------
+        Weighted matrix of the requested view and predictors. If no predictors are provided, returns the variable names.
+
+        """
         if predictors is None:
             predictors = self.mod[view_name].var_names
 
@@ -91,46 +119,45 @@ class MistyData(MuData):
         else:
             return self.mod[view_name][:, predictors].varm['weighted'].T
 
-
     @d.dedent
     def __call__(self,
                  model: SingleViewModel,
                  bypass_intra: bool = False,
                  predict_self: bool = False,
-                 maskby = None,
+                 maskby: str = None,
                  k_cv: int = 10,
-                 alphas = np.array([0.1, 1, 10]),
+                 alphas: np.array | list[float] = np.array([0.1, 1, 10]),
                  seed: int = V.seed,
                  inplace: bool = V.inplace,
                  verbose: bool = V.verbose,
                  **kwargs
-                 ):
+                 ) -> None | tuple[pd.DataFrame, pd.DataFrame]:
         """
         A Multi-view Learning for dissecting Spatial Transcriptomics data (MISTy) model.
 
         Parameters
         ----------
-        model : `str`, optional (default: 'rf')
+        model
             Single-view model of class SingleViewModel. Default options are RandomForestModel, LinearModel, and RobustLinearModel
             available via ``liana.method.sp._misty._single_view_models``.
-        bypass_intra : `bool`, optional (default: False)
+        bypass_intra
             Whether to bypass modeling the intraview via leave-one-feature-out (LOFO).
             In other words, whether to bypass modelling each target by LOFO within the same spots.
-        predict_self : `bool`, optional (default: False)
+        predict_self
             Whether to predict self-interactions. These are determined purely by the feature names.
-        maskby : `str`, optional (default: None)
+        maskby
             Column in the .obs attribute used to group or mask observations in the intra-view
             If None, all cells are considered as one group.
-        k_cv : `int`, optional (default: 10)
+        k_cv
             Number of folds for cross-validation used in the multi-view model,
             and single-view models if model is 'linear'.
-        alphas : `list`, optional (default: [0.1, 1, 10])
+        alphas
             List of alpha values used to choose from, that control the strength of the ridge regression,
             used for the multi-view part of the model. Only used if there are more than 2 views being modeled (including intra).
         %(seed)s
         %(inplace)s
         %(verbose)s
-        **kwargs : `dict`
+        **kwargs
             Keyword arguments passed to the Regressors. Note that random_state is already set via ``seed``.
 
         Returns
