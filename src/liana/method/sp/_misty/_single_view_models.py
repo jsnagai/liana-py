@@ -6,33 +6,90 @@ from sklearn.model_selection import KFold, cross_val_predict
 
 
 class SingleViewModel:
-    """Base class for single view models. Subclasses should implement the fit method."""
+    """
+    Base class for single view models. Subclasses should implement the fit method.
 
-    def __init__(self, seed, **kwargs):
+    Parameters
+    ----------
+    seed
+        Pseudo-random number generator (PRNG) state seed.
+    kwargs
+        Other arguments used in a specific method. See the specific documentation in the corresponding child class.
+
+    Attributes
+    ----------
+    seed : int
+        The assigned initial state for the PRNG.
+    kwargs : dict[str, Any]
+        Keyword arguments passed to the fit function in a child class.
+    model : str
+        The model name.
+    predictions : np.ndarray
+        Contains the resulting predictions in array form.
+    importances : dict[str, np.ndarray]
+        Contains the importance scores of the different predictors.
+
+    """
+
+    def __init__(self, seed: int, **kwargs):
         self.seed = seed
         self.kwargs = kwargs  # Store kwargs to be used in fit method
         self.model = None
         self.predictions = None
         self.importances = None
 
-    def fit(self, y, X, predictors, k_cv=None):
+    def fit(self,
+            y: np.ndarray,
+            X: np.ndarray,
+            predictors: list[str],
+            k_cv: int = None
+            ):
         """
         Fit the model to the data and store the predictions and importances.
 
         Parameters
         ----------
-        y : np.ndarray
+        y
             Target variable
-        X : np.ndarray
+        X
             Feature matrix
-        predictors : list
+        predictors
             List of feature names
-        k_cv : int
+        k_cv
             Number of cross-validation folds. If None, no cross-validation is performed.
+
+        Raises
+        ------
+        NotImplementedError
+            Base class method, children classes replace it with their own method.
         """
         raise NotImplementedError("This method should be implemented by subclasses")
 
-    def _k_fold_predict(self, y, X, k_cv, fit_method):
+    def _k_fold_predict(self,
+                        y: np.ndarray,
+                        X: np.ndarray,
+                        k_cv: int,
+                        fit_method: callable
+                        ) -> np.ndarray:
+        """
+        Computes K-Fold cross-validation (CV)
+
+        Parameters
+        ----------
+        y
+            Target variable
+        X
+            Feature matrix
+        k_cv
+            Number of CV steps
+        fit_method
+            Model function to compute estimates
+
+        Returns
+        -------
+        Matrix with the prediction results for each round of CV
+
+        """
         predictions = np.zeros_like(y)
         kf = KFold(n_splits=k_cv, random_state=self.seed, shuffle=True)
         for train_index, test_index in kf.split(X):
