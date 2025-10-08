@@ -20,7 +20,20 @@ from liana.utils.mdata_to_anndata import mdata_to_anndata
 
 
 class SpatialBivariate:
-    """A class for bivariate local spatial metrics."""
+    """
+    A class for bivariate local spatial metrics.
+
+    Parameters
+    ----------
+    %(x_name)s
+    %(y_name)s
+
+    Attributes
+    ----------
+    %(x_name)s
+    %(y_name)s
+
+    """
 
     def __init__(self, x_name: str = 'x', y_name: str = 'y'):
         self.x_name = x_name
@@ -30,10 +43,10 @@ class SpatialBivariate:
     def __call__(self,
                  mdata: MuData | AnnData,
                  local_name: str | None = 'cosine',
-                 global_name: None | str | list = None,
+                 global_name: None | str | list[str] = None,
                  resource_name: str = None,
                  resource: pd.DataFrame | None = V.resource,
-                 interactions: list = V.interactions,
+                 interactions: list[str] = V.interactions,
                  connectivity_key: str = K.connectivity_key,
                  mask_negatives: bool = False,
                  add_categories: bool = False,
@@ -54,29 +67,28 @@ class SpatialBivariate:
         %(mdata)s
         %(local_name)s
         %(global_name)s
-        %(interactions)s
-        %(resource)s
         %(resource_name)s
+        %(resource)s
+        %(interactions)s
         %(connectivity_key)s
         %(mask_negatives)s
         %(add_categories)s
         %(n_perms)s
         %(seed)s
-        nz_prop: float
+        nz_prop
             Minimum proportion of non-zero values for each features.
             For example, if working with gene expression data,
             this would be the proportion of cells expressing a gene.
             Both features must have a proportion greater than
             `nz_prop` to be considered in the analysis.
+        remove_self_interactions
+            Whether to remove self-interactions. `True` by default.
         complex_sep: str
             Separator to use for complex names.
         xy_sep: str
             Separator to use for interaction names.
-        remove_self_interactions: bool
-            Whether to remove self-interactions. `True` by default.
         %(verbose)s
-
-        **kwargs : dict, optional
+        **kwargs
             Additional keyword arguments:
             - For AnnData:
                 %(x_name)s By default: 'ligand'.
@@ -100,11 +112,17 @@ class SpatialBivariate:
                 y_transform: bool
                     Function to transform the y-mod.
 
+        Raises
+        ------
+        ValueError
+            If `n_perms` is not None or negative or if `mdata` is not a valid type.
+
         Returns
         -------
         An AnnData object, (optionally) with multiple layers which correspond
         categories/p-values, and the actual scores are stored in `.X`.
         Moreover, global stats are stored in ``.var``.
+
         """
         if n_perms is not None:
             if not isinstance(n_perms, int) or n_perms < 0:
@@ -311,7 +329,23 @@ class SpatialBivariate:
                                 )
 
 
-    def validate_kwargs(self, expected_params, **kwargs):
+    def validate_kwargs(self, expected_params: set[str], **kwargs):
+        """
+        Checks provided keyword arguments' keys are within an expected set.
+
+        Parameters
+        ----------
+        expected_params
+            Set of keys of expected parameters.
+        **kwargs
+            Dictionary of keyowrd arguments to check for key validity.
+
+        Raises
+        ------
+        ValueError
+            If any key of the provided keyword arguments are not within the set of expected ones.
+
+        """
         unexpected_kwargs = set(kwargs) - expected_params
         if unexpected_kwargs:
             raise ValueError(f"Unexpected keyword arguments: {unexpected_kwargs}")
@@ -347,8 +381,15 @@ class SpatialBivariate:
 
         return cats
 
-    def show_functions(self):
-        """Print information about all bivariate local metrics."""
+    def show_functions(self) -> pd.DataFrame:
+        """
+        Print information about all bivariate local metrics.
+
+        Returns
+        -------
+        Table of the bivariate methods and their description.
+
+        """
         funs = LocalFunction.instances.copy()
         for function in funs.values():
             funs[function.name] = {
