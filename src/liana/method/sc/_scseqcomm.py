@@ -1,9 +1,26 @@
+from pandas import DataFrame, Series
 import numpy as np
 
 from liana.method.sc._Method import Method, MethodMeta
 
 
-def _inter_score(x):
+def _inter_score(x: DataFrame) -> tuple[Series, None]:
+    """
+    Computes the element-wise minimum between pairs of ligand-receptor CDF
+
+    Parameters
+    ----------
+    x
+        DataFrame containing the ligand and receptor CDF
+
+    Returns
+    -------
+    inter_score
+        Pair-wise minimum CDF
+    None
+
+    """
+
     inter_score = np.minimum(x['ligand_cdf'], x['receptor_cdf'])
     return inter_score, None
 
