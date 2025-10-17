@@ -4,7 +4,7 @@ import numpy as np
 from liana.method.sc._Method import Method, MethodMeta
 
 
-def _sca_score(x: DataFrame) -> tuple[np.ndarray, None]:
+def _sca_score(x: DataFrame) -> tuple[DataFrame, None]:
     """
     Calculate SingleCellSignalR-like LRscore
 
