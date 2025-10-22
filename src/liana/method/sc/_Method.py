@@ -15,7 +15,58 @@ from liana.method.sc._liana_pipe import liana_pipe
 
 
 class MethodMeta:
-    """A Class used to store Method Metadata"""
+    """
+    A Class used to store Method Metadata
+
+    Parameters
+    ----------
+    method_name
+        Name of the Method
+    complex_cols
+        Columns relevant for protein complexes
+    add_cols
+        Additional columns required by the method
+    fun
+        Interaction Scoring function
+    magnitude
+        Name of the `magnitude` Score (None if not present)
+    magnitude_ascending
+        Whether to rank `magnitude` in ascending manner (None if not relevant)
+    specificity
+        Name of the `specificity` Score if Present (None if not present)
+    specificity_ascending
+        Whether to rank `magnitude` in ascending manner  (None if not relevant)
+    permute
+        Whether it requires permutations
+    reference
+        Publication reference in Harvard style
+
+    Attributes
+    ----------
+    method_name
+        Name of the Method
+    complex_cols
+        Columns relevant for protein complexes
+    add_cols
+        Additional columns required by the method
+    fun
+        Interaction Scoring function
+    magnitude
+        Name of the `magnitude` Score (None if not present)
+    magnitude_ascending
+        Whether to rank `magnitude` in ascending manner (None if not relevant)
+    specificity
+        Name of the `specificity` Score if Present (None if not present)
+    specificity_ascending
+        Whether to rank `magnitude` in ascending manner  (None if not relevant)
+    permute
+        Whether it requires permutations
+    reference
+        Publication reference in Harvard style
+    instances
+        List of instances of this class
+
+    """
 
     # initiate a list to store weak references to all instances
     instances = []
@@ -24,7 +75,7 @@ class MethodMeta:
                  method_name: str,
                  complex_cols: list,
                  add_cols: list,
-                 fun,
+                 fun: callable,
                  magnitude: str | None,
                  magnitude_ascending: bool | None,
                  specificity: str | None,
@@ -32,32 +83,6 @@ class MethodMeta:
                  permute: bool,
                  reference: str
                  ):
-        """
-        Method Metadata Class
-
-        Parameters
-        ----------
-        method_name
-            Name of the Method
-        complex_cols
-            Columns relevant for protein complexes
-        add_cols
-            Additional columns required by the method
-        fun
-            Interaction Scoring function
-        magnitude
-            Name of the `magnitude` Score (None if not present)
-        magnitude_ascending
-            Whether to rank `magnitude` in ascending manner (None if not relevant)
-        specificity
-            Name of the `specificity` Score if Present (None if not present)
-        specificity_ascending
-            Whether to rank `magnitude` in ascending manner  (None if not relevant)
-        permute
-            Whether it requires permutations
-        reference
-            Publication reference in Harvard style
-        """
         self.__class__.instances.append(weakref.proxy(self))
         self.method_name = method_name
         self.complex_cols = complex_cols
@@ -71,18 +96,27 @@ class MethodMeta:
         self.reference = reference
 
     def describe(self):
-        """Briefly described the method"""
+        """
+        Briefly describes the method
+
+        """
         print(
             f"{self.method_name} uses `{self.magnitude}` and `{self.specificity}`"
             f" as measures of expression strength and interaction specificity, respectively"
         )
 
     def reference(self):
-        """Prints out reference in Harvard format"""
+        """
+        Prints out reference in Harvard format
+
+        """
         print(self.reference)
 
     def get_meta(self):
-        """Returns method metadata as pandas row"""
+        """
+        Returns method metadata as pandas row
+
+        """
         meta = DataFrame([{"Method Name": self.method_name,
                            "Magnitude Score": self.magnitude,
                            "Specificity Score": self.specificity,
@@ -97,7 +131,7 @@ class MethodMeta:
                   key_added: str = K.uns_key,
                   inplace: bool = V.inplace,
                   verbose: bool = V.verbose,
-                  **kwargs):
+                  **kwargs) -> DataFrame | None:
         """
         Run a method by sample.
 
@@ -111,7 +145,12 @@ class MethodMeta:
             Possible values: False, True, 'full', where 'full' will print the results for each sample,
             and True will only print the sample progress bar. Default is False.
         **kwargs
-            keyword arguments to pass to the method
+            Keyword arguments to pass to the method
+
+        Raises
+        ------
+        ValueError
+            If `sample_key` is not present in `adata.obs`
 
         Returns
         -------
@@ -161,9 +200,22 @@ class MethodMeta:
 
 
 class Method(MethodMeta):
-    """Ligand-Receptor Method Class"""
+    """
+    Ligand-Receptor Method Class
 
-    def __init__(self, _method):
+    Parameters
+    ----------
+    method
+        Instance of metod metadata class
+
+    Attributes
+    ----------
+    method
+        Instance of metod metadata class
+
+    """
+
+    def __init__(self, _method: MethodMeta):
         super().__init__(method_name=_method.method_name,
                          complex_cols=_method.complex_cols,
                          add_cols=_method.add_cols,
@@ -200,7 +252,7 @@ class Method(MethodMeta):
                  mdata_kwargs: dict | None = None,
                  inplace: bool = V.inplace,
                  verbose: bool | None = V.verbose,
-                 ):
+                 ) -> DataFrame | None:
         """
         Run a ligand-receptor method.
 
@@ -222,8 +274,7 @@ class Method(MethodMeta):
         %(use_raw)s
         %(layer)s
         %(de_method)s
-        %(verbose)s
-        %(n_perms_sc)s
+        %(n_perms)s
         %(seed)s
         n_jobs
             Number of jobs to run in parallel.
@@ -231,12 +282,14 @@ class Method(MethodMeta):
         %(interactions)s
         %(mdata_kwargs)s
         %(inplace)s
+        %(verbose)s
 
         Returns
         -------
-            If ``inplace = False``, returns a `DataFrame` with ligand-receptor results
-            Otherwise, modifies the ``adata`` object with the following key:
+        If ``inplace = False``, returns a `DataFrame` with ligand-receptor results
+        Otherwise, modifies the ``adata`` object with the following key:
             - :attr:`anndata.AnnData.uns` ``[`key_added`]`` with the aforementioned DataFrame
+
         """
         if supp_columns is None:
             supp_columns = []
