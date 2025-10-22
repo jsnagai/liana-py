@@ -8,13 +8,38 @@ from liana._constants import DefaultValues as V
 from liana._constants import Keys as K
 from liana._docs import d
 from liana.method.sc._liana_pipe import liana_pipe
-from liana.method.sc._Method import MethodMeta
+from liana.method.sc._Method import MethodMeta, Method
 
 
 class AggregateClass(MethodMeta):
-    """LIANA's Method Consensus Class"""
+    """
+    LIANA's Method Consensus Class
 
-    def __init__(self, _SCORE, methods):
+    Parameters
+    ----------
+    _SCORE
+        Scoring method instance
+    methods
+        List of method instances to aggregate
+
+    Attributes
+    ----------
+    _SCORE
+        Scoring method instance
+    methods
+        List of method instances to aggregate
+    specificity_specs
+        Collection of method specificity's specifications
+    magnitude_specs
+        Collection of method magnitudes' specifications
+    add_cols
+        Additional columns required for each method
+    complex_cols
+        Columns relevant for protein complexes for each method
+
+    """
+
+    def __init__(self, _SCORE: Method, methods: list[Method]):
         super().__init__(method_name=_SCORE.method_name,
                          complex_cols=[],
                          add_cols=[],
@@ -46,7 +71,10 @@ class AggregateClass(MethodMeta):
         )
 
     def describe(self):
-        """Briefly described the method"""
+        """
+        Briefly describes the method
+
+        """
         print(
             f"{self.method_name} returns `{self.magnitude}`, `{self.specificity}`. "
             f"{self.magnitude} and {self.specificity} respectively represent an aggregate of the "
@@ -77,7 +105,7 @@ class AggregateClass(MethodMeta):
                  mdata_kwargs: dict | None = None,
                  inplace: bool = V.inplace,
                  verbose: bool | None = V.verbose,
-                 ):
+                 ) -> DataFrame | None:
         """
         Get an aggregate of ligand-receptor scores from multiple methods.
 
@@ -102,8 +130,7 @@ class AggregateClass(MethodMeta):
         %(use_raw)s
         %(layer)s
         %(de_method)s
-        %(verbose)s
-        %(n_perms_sc)s
+        %(n_perms)s
         %(seed)s
         n_jobs
             Number of jobs to run in parallel.
@@ -111,12 +138,14 @@ class AggregateClass(MethodMeta):
         %(interactions)s
         %(mdata_kwargs)s
         %(inplace)s
+        %(verbose)s
 
         Returns
         -------
         If ``inplace = False``, returns a `DataFrame` with ligand-receptor results
         Otherwise, modifies the ``adata`` object with the following key:
             - :attr:`anndata.AnnData.uns` ``['liana_res']`` with the aforementioned DataFrame
+
         """
         if mdata_kwargs is None:
             mdata_kwargs = {}
