@@ -65,7 +65,7 @@ def liana_pipe(adata: AnnData,
         the resource requested via `resource_name`
     interactions
         List of custom ligand-receptor interaction pairs used when no resource is provided.
-    $(groubpy_pairs)s
+    %(groubpy_pairs)s
     expr_prop
         Minimum expression proportion for the ligands/receptors (and their subunits) in the
         corresponding cell identities. Set to `0`, to return unfiltered results.

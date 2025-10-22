@@ -1,6 +1,7 @@
 import numpy as np
 from mudata import MuData
-from pandas import concat
+from pandas import concat, DataFrame
+from anndata import AnnData
 
 from liana._constants import DefaultValues as V
 from liana._logging import _check_if_installed
@@ -8,16 +9,16 @@ from liana.method._pipe_utils import prep_check_adata
 from liana.utils import obsm_to_adata
 
 
-def estimate_metalinks(adata,
-                       resource,
-                       pd_net,
-                       t_net=None,
-                       x_name='metabolite',
-                       y_name='receptor',
-                       use_raw=V.use_raw,
-                       layer=V.layer,
-                       verbose=V.verbose,
-                       **kwargs):
+def estimate_metalinks(adata: AnnData,
+                       resource: DataFrame,
+                       pd_net: DataFrame,
+                       t_net: DataFrame = None,
+                       x_name: str = 'metabolite',
+                       y_name: str = 'receptor',
+                       use_raw: bool = V.use_raw,
+                       layer: str = V.layer,
+                       verbose: bool = V.verbose,
+                       **kwargs) -> MuData:
     """
     Estimate Metabolites from anndata object, and return a MuData object of metabolites and receptors.
 
@@ -35,6 +36,9 @@ def estimate_metalinks(adata,
         Name of the metabolite modality.
     y_name
         Name of the receptor modality. Must be present as a column in the resource.
+    %(use_raw)s
+    %(layer)s
+    %(verbose)s
     **kwargs
         Additional arguments to pass to the decoupler-py functions.
         Method-specific arguments are not supported.
