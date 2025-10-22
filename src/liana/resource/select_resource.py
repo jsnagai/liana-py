@@ -16,6 +16,11 @@ def select_resource(resource_name: str = V.resource_name) -> DataFrame:
     resource_name
         Name of the resource to be loaded and use for ligand-receptor inference.
 
+    Raises
+    ------
+    ValueError
+        If the resource name provided is not availabe in LIANA
+
     Returns
     -------
     A dataframe with ``['ligand', 'receptor']`` columns
