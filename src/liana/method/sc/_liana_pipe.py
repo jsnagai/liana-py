@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import reduce
 
-import anndata
+from anndata import AnnData
 import numpy as np
 import pandas
 import pandas as pd
@@ -21,13 +21,14 @@ from liana.method._pipe_utils._get_mean_perms import _get_mat_idx, _get_means_pe
 from liana.resource import explode_complexes, filter_reassemble_complexes
 from liana.resource.select_resource import _handle_resource
 from liana.utils import mdata_to_anndata
+from liana.method.sc._Method import Method
 
 
-def liana_pipe(adata: anndata.AnnData,
+def liana_pipe(adata: AnnData,
                groupby: str,
                resource_name: str,
                resource: pd.DataFrame | None,
-               interactions,
+               interactions: list[tuple[str, str]],
                groupby_pairs: pd.DataFrame | None,
                expr_prop: float,
                min_cells: int,
@@ -41,12 +42,12 @@ def liana_pipe(adata: anndata.AnnData,
                layer: str | None,
                supp_columns: list | None = None,
                return_all_lrs: bool = False,
-               _score=None,
+               _score: Method | None = None,
                _methods: list = None,
                _consensus_opts: list = None,
                _aggregate_method: str | None = None,
                mdata_kwargs: dict | None = None,
-               ):
+               ) -> AnnData:
     """
     Single-cell Ligand-receptor inference pipeline.
 
@@ -62,9 +63,12 @@ def liana_pipe(adata: anndata.AnnData,
         Parameter to enable external resources to be passed. Expects a pandas dataframe
         with [`ligand`, `receptor`] columns. None by default. If provided will overrule
         the resource requested via `resource_name`
+    interactions
+        List of custom ligand-receptor interaction pairs used when no resource is provided.
+    $(groubpy_pairs)s
     expr_prop
         Minimum expression proportion for the ligands/receptors (and their subunits) in the
-         corresponding cell identities. Set to `0`, to return unfiltered results.
+        corresponding cell identities. Set to `0`, to return unfiltered results.
     min_cells
         Minimum cells per cell identity
     base
@@ -81,8 +85,10 @@ def liana_pipe(adata: anndata.AnnData,
         Verbosity flag
     use_raw
         Use raw attribute of adata if present.
+    n_jobs
+        Number of parallel threads to run the analysis.
     layer
-        Layer in anndata.AnnData.layers to use. If None, use anndata.AnnData.X.
+        Layer in AnnData.layers to use. If None, use AnnData.X.
     supp_columns
         additional columns to be added to the output of each method.
     return_all_lrs
@@ -96,6 +102,8 @@ def liana_pipe(adata: anndata.AnnData,
         Ways to aggregate interactions across methods by default does all aggregations (['Specificity', 'Magnitude']).
     _aggregate_method
         RobustRankAggregate('rra') or mean rank ('mean').
+    mdata_kwargs
+        Other keyword arguments passed to the MuData to AnnData conversion function `mdata_to_anndata`
 
     Returns
     -------
@@ -369,7 +377,7 @@ def _expm1_base(X, base):
 
 
 def _run_method(lr_res: pandas.DataFrame,
-                adata: anndata.AnnData,
+                adata: AnnData,
                 expr_prop: float,
                 _score,
                 _key_cols: list,
