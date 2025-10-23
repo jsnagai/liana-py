@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-import anndata
+from anndata import AnnData
 import numpy as np
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
 
-def _get_means_perms(adata: anndata.AnnData,
+def _get_means_perms(adata: AnnData,
                      n_perms: int,
                      seed: int,
-                     agg_fun,
+                     agg_fun: callable,
                      norm_factor: float | None,
                      n_jobs: int,
                      verbose: bool):
@@ -25,9 +25,11 @@ def _get_means_perms(adata: anndata.AnnData,
     seed
         Random seed for reproducibility.
     agg_fun
-        function by which to aggregate the matrix, should take `axis` argument
+        Function by which to aggregate the matrix, should take `axis` argument
     norm_factor
-        additionally normalize the data by some factor (e.g. matrix max for CellChat)
+        Additionally normalize the data by some factor (e.g. matrix max for CellChat)
+    n_jobs
+        Number of parallel threads to run the analysis.
     verbose
         Verbosity bool
 
@@ -38,6 +40,7 @@ def _get_means_perms(adata: anndata.AnnData,
         - ligand_pos: Index of the ligand in the tensor
         - receptor_pos: Index of the receptor in the perms tensor
         - labels_pos: Index of cell identities in the perms tensor
+
     """
     if isinstance(norm_factor, np.float32):
         adata.X /= norm_factor
@@ -110,7 +113,6 @@ def _get_mat_idx(adata, lr_res):
     target_idx = lr_res['target'].map(labels_pos)
 
     return ligand_idx, receptor_idx, source_idx, target_idx
-
 
 
 def _calculate_pvals(lr_truth, perm_stats, _score_fun):
