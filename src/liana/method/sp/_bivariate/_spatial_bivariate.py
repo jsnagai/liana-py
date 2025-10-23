@@ -83,9 +83,9 @@ class SpatialBivariate:
             `nz_prop` to be considered in the analysis.
         remove_self_interactions
             Whether to remove self-interactions. `True` by default.
-        complex_sep: str
+        complex_sep
             Separator to use for complex names.
-        xy_sep: str
+        xy_sep
             Separator to use for interaction names.
         %(verbose)s
         **kwargs
