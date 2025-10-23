@@ -32,6 +32,7 @@ def _aggregate(lrs: dict,
     Returns
     -------
     A long pd.DataFrame with ranked LRs
+
     """
     # join the sc to the whole universe between the methods
     if _key_cols is None:
@@ -124,6 +125,7 @@ def _corr_beta_pvals(p, k) -> np.array:
     Returns
     -------
     An array with corrected p-values
+
     """
     p = np.clip(p * k, a_min=0, a_max=1)
     return p
@@ -133,6 +135,7 @@ def _rho_scores(rmat, dist_a, dist_b):
     """
     Calculate Beta Distribution Rho Scores
 
+    Parameters
     ----------
     rmat
         a matrix where rows are the ranks/n for each interaction, while
@@ -145,6 +148,7 @@ def _rho_scores(rmat, dist_a, dist_b):
     Returns
     -------
     A vector of pvals as implemented in the RRA method
+
     """
     # Sort values by sources (rows)
     rmat = np.sort(rmat, axis=1)
@@ -170,6 +174,7 @@ def _robust_rank_aggregate(rmat) -> np.array:
     Returns
     -------
     An array with p-values for each row
+
     """
     # 0-1 values depending on relative rank of
     # each interaction divided by the max of each method
