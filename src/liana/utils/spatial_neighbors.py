@@ -38,7 +38,7 @@ def spatial_neighbors(adata: AnnData,
                       spatial_key: str = K.spatial_key,
                       key_added: str = K.spatial_key,
                       inplace: bool = V.inplace
-                      ) -> Union[np.array | None]:
+                      ) -> Union[np.ndarray | None]:
     """
     Generate spatial connectivity weights using Euclidean distance.
 
