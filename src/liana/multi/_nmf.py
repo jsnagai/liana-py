@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -22,7 +23,7 @@ def nmf(adata: AnnData = None,
         inplace: bool = True,
         verbose: bool = False,
         **kwargs
-        ) -> tuple[np.ndarray, np.ndarray, pd.DataFrame | None, int] | None:
+        ) -> Union[tuple[np.ndarray, np.ndarray, pd.DataFrame | None, int] | None]:
     """
     Fits NMF to an AnnData object.
 

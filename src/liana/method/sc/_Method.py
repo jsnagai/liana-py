@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Union
 
 import weakref
 
@@ -131,7 +132,7 @@ class MethodMeta:
                   key_added: str = K.uns_key,
                   inplace: bool = V.inplace,
                   verbose: bool = V.verbose,
-                  **kwargs) -> DataFrame | None:
+                  **kwargs) -> Union[DataFrame | None]:
         """
         Run a method by sample.
 
@@ -252,7 +253,7 @@ class Method(MethodMeta):
                  mdata_kwargs: dict | None = None,
                  inplace: bool = V.inplace,
                  verbose: bool | None = V.verbose,
-                 ) -> DataFrame | None:
+                 ) -> Union[DataFrame | None]:
         """
         Run a ligand-receptor method.
 

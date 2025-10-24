@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 from numpy.typing import ArrayLike
 from anndata import AnnData
@@ -36,7 +38,7 @@ def spatial_neighbors(adata: AnnData,
                       spatial_key: str = K.spatial_key,
                       key_added: str = K.spatial_key,
                       inplace: bool = V.inplace
-                      ) -> np.array | None:
+                      ) -> Union[np.array | None]:
     """
     Generate spatial connectivity weights using Euclidean distance.
 

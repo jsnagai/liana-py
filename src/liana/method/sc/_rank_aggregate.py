@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Union
 
 import anndata as an
 from mudata import MuData
@@ -105,7 +106,7 @@ class AggregateClass(MethodMeta):
                  mdata_kwargs: dict | None = None,
                  inplace: bool = V.inplace,
                  verbose: bool | None = V.verbose,
-                 ) -> DataFrame | None:
+                 ) -> Union[DataFrame | None]:
         """
         Get an aggregate of ligand-receptor scores from multiple methods.
 

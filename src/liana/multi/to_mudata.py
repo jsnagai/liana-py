@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Union
 
 import warnings as warnings
 
@@ -332,7 +333,7 @@ def filter_view_markers(mdata: MuData,
                         view_sep: str = ':',
                         var_column: str | None = 'highly_variable',
                         inplace: bool = False
-                        ) -> MuData | None:
+                        ) -> Union[MuData | None]:
     """
     Used for removing potential cell type marker genes found in the background of other views and thought to be contamination.
     In each view, sets highly variable genes to False if they are in the markers dict for another view, but not if they are in the markers for the same view.

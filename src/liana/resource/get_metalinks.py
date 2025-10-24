@@ -1,4 +1,5 @@
 import os
+from typing import Union
 import sqlite3
 
 import pandas as pd
@@ -192,7 +193,7 @@ def get_metalinks_values(table_name: str,
 
 def describe_metalinks(db_path: str | None = None,
                        return_output: bool = False
-                       ) -> str | None:
+                       ) -> Union[str | None]:
     """
     Prints the schema information and foreign key details for all tables in the specified SQLite database.
 

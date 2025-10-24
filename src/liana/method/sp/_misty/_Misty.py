@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -95,7 +96,7 @@ class MistyData(MuData):
     def get_weighted_matrix(self,
                             view_name: str,
                             predictors: list[str] = None
-                            ) -> pd.Index | np.ndarray:
+                            ) -> Union[pd.Index | np.ndarray]:
         """
         Returns the weighted matrix for a given set of predictors in a view.
 
@@ -131,7 +132,7 @@ class MistyData(MuData):
                  inplace: bool = V.inplace,
                  verbose: bool = V.verbose,
                  **kwargs
-                 ) -> None | tuple[pd.DataFrame, pd.DataFrame]:
+                 ) -> Union[None | tuple[pd.DataFrame, pd.DataFrame]]:
         """
         A Multi-view Learning for dissecting Spatial Transcriptomics data (MISTy) model.
 

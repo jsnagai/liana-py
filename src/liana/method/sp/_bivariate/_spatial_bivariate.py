@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -58,7 +59,7 @@ class SpatialBivariate:
                  xy_sep: str = V.lr_sep,
                  verbose: bool = V.verbose,
                  **kwargs
-                 ) -> AnnData | pd.DataFrame | None:
+                 ) -> Union[AnnData | pd.DataFrame | None]:
         """
         A method for bivariate local spatial metrics.
 
