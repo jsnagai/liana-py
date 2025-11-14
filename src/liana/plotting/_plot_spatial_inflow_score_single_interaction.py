@@ -5,8 +5,6 @@ from matplotlib.gridspec import GridSpec
 import warnings
 from typing import List, Tuple, Optional, Union
 
-# Note: AnnData type hints are omitted here for simplicity but would typically use 'anndata.AnnData'
-
 def plot_spatial_inflow_score_single_interaction(
     adata,
     spatial_key: str,
