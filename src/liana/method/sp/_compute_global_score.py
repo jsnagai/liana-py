@@ -1,17 +1,11 @@
 import numpy as np
 import pandas as pd
-from scipy.sparse import issparse, csr_matrix, diags
 from anndata import AnnData
 from joblib import Parallel, delayed
+from scipy.sparse import csr_matrix, diags, issparse
 
-# --- Placeholder for li.mt._constants.DefaultValues ---
-class DefaultValues:
-    lr_sep = '^'
-V = DefaultValues()
+from liana._constants import DefaultValues as V
 
-# =================================================================
-# 1. Helper Function: Splits complex names
-# =================================================================
 
 def _split_complex(name: str, complex_sep: str = "_"):
     """Helper for splitting complex names."""
@@ -20,10 +14,6 @@ def _split_complex(name: str, complex_sep: str = "_"):
         return toks[0], complex_sep.join(toks[1:])
     else:
         return name, name
-
-# =================================================================
-# 2. Worker Function: Computes score for a single permutation
-# =================================================================
 
 def _run_single_permutation(
     shuffled_labels: np.ndarray,
@@ -64,17 +54,13 @@ def _run_single_permutation(
     )
     keys = np.char.add(np.char.add(interaction_names_tiled, xy_sep), celltype_names_repeated)
 
-    return dict(zip(keys.tolist(), values.tolist()))
-
-# =================================================================
-# 3. Main Function: Computes score and p-value
-# =================================================================
+    return dict(zip(keys.tolist(), values.tolist(), strict=True))
 
 def compute_global_score(
     lrdata: AnnData,
     groupby: str,
     xy_sep: str = V.lr_sep,
-    complex_sep: str = "_",
+    complex_sep: str = V.complex_sep,
     n_perms: int = 500,
     seed: int = 42,
     n_jobs: int = -1,
@@ -92,10 +78,10 @@ def compute_global_score(
         seed (int, optional): Random seed for reproducibility. Defaults to 42.
         n_jobs (int, optional): Number of parallel jobs. Defaults to -1 (all processors).
 
-    Returns:
+    Returns
+    -------
         None: The result with 'lr_mean' and 'pval' is stored in `lrdata.uns["global_score"]`.
     """
-
     if groupby not in lrdata.obs.columns:
         raise KeyError(
             f"`groupby`='{groupby}' not found in lrdata.obs. "
@@ -155,8 +141,8 @@ def compute_global_score(
     df["pval"] = 0.0
 
     # Complex parsing
-    lig_primary, lig_complex = zip(*df["ligand"].map(lambda x: _split_complex(x, complex_sep)))
-    rec_primary, rec_complex = zip(*df["receptor"].map(lambda x: _split_complex(x, complex_sep)))
+    lig_primary, lig_complex = zip(*df["ligand"].map(lambda x: _split_complex(x, complex_sep)), strict=True)
+    rec_primary, rec_complex = zip(*df["receptor"].map(lambda x: _split_complex(x, complex_sep)), strict=True)
     df["ligand"] = lig_primary
     df["ligand_complex"] = lig_complex
     df["receptor"] = rec_primary
@@ -166,7 +152,7 @@ def compute_global_score(
 
     # Prepare for permutation test
     interaction_keys_for_init = full_names.tolist()
-    observed_score_map = dict(zip(interaction_keys_for_init, observed_df["lr_mean"].values))
+    observed_score_map = dict(zip(interaction_keys_for_init, observed_df["lr_mean"].values, strict=True))
     perm_matrix = {key: [] for key in interaction_keys_for_init}
 
     # --- Part B: Permutation test ---

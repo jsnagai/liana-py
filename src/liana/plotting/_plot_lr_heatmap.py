@@ -1,9 +1,11 @@
+from typing import Any
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
-from typing import Optional, Tuple, Dict, Any
-from anndata import AnnData # Assuming 'lrdata' is an anndata object, common in this context
+from anndata import AnnData  # Assuming 'lrdata' is an anndata object, common in this context
+
 
 def lr_heatmap(
     ligand: str,
@@ -12,12 +14,12 @@ def lr_heatmap(
     groupby: str,
     sep: str = "^",
     clip: bool = True,
-    filter_min_mean: Optional[float] = None,
-    title: Optional[str] = None,
+    filter_min_mean: float | None = None,
+    title: str | None = None,
     xlabel: str = "Receiver cell type",
     ylabel: str = "Sender cell type",
     cmap: str = "mako_r",
-    figsize: Tuple[float, float] = (10, 8),
+    figsize: tuple[float, float] = (10, 8),
     **kwargs: Any
 ):
     """
@@ -67,13 +69,13 @@ def lr_heatmap(
         parts = sub.var_names.to_series().str.rsplit(sep, n=2, expand=True)
         if parts.shape[1] != 3:
              # Fallback/Error if the split didn't yield 3 parts
-            raise ValueError(f"Could not parse var_names using separator '{sep}'. Expected format: 'sender{sep}ligand{sep}receptor'.")
+            raise ValueError(f"Could not parse var_names using separator '{sep}'. Expected format: 'sender{sep}ligand{sep}receptor'.") from None
 
         parts.columns = ["sender", "ligand", "receptor"]
         # Assign the parsed sender labels to `sub.var`
         sub.var["sender"] = parts["sender"].values
-    except Exception as e:
-        raise ValueError(f"Error during var_names parsing: {e}")
+    except ValueError as e:
+        raise ValueError(f"Error during var_names parsing: {e}") from e
 
     # 3. Prepare Data for Heatmap
     receiver = sub.obs[groupby].astype(str) # Convert to string for consistent grouping
@@ -91,8 +93,8 @@ def lr_heatmap(
     if filter_min_mean is not None:
         try:
             filter_min_mean = float(filter_min_mean)
-        except ValueError:
-            raise TypeError("filter_min_mean must be a number (float or int).")
+        except ValueError as e:
+            raise TypeError("filter_min_mean must be a number (float or int).") from e
 
         # Keep groups (rows/cols) where the average signal is above the threshold
         keep_rows = heatmap_df.mean(axis=1) >= filter_min_mean
@@ -124,26 +126,26 @@ def lr_heatmap(
 
     # 7. Plotting
     plt.figure(figsize=figsize)
-    
+
     # Set default seaborn heatmap aesthetics for a clean look
     default_kwargs = {
-        'linewidths': 0.4, 
+        'linewidths': 0.4,
         'linecolor': "white",
         'square': True,
         'cbar_kws': {'shrink': 0.8} # Shrink the colorbar slightly
     }
-    
+
     # Merge default kwargs with user-provided kwargs, prioritizing user input
     plot_kwargs = {**default_kwargs, **kwargs}
 
     sns.heatmap(
-        mat, 
-        cmap=cmap, 
-        vmin=vmin, 
+        mat,
+        cmap=cmap,
+        vmin=vmin,
         vmax=vmax,
         **plot_kwargs
     )
-    
+
     # 8. Final Touches
     plt.xlabel(xlabel, fontsize=12, fontweight='bold')
     plt.ylabel(ylabel, fontsize=12, fontweight='bold')
@@ -152,5 +154,5 @@ def lr_heatmap(
     plt.yticks(rotation=0) # Keep sender names horizontal
     plt.tight_layout()
     plt.show()
-    
+
     return mat

@@ -14,7 +14,7 @@ from liana.method._pipe_utils import assert_covered, prep_check_adata
 from liana.method._pipe_utils._common import _get_props
 from liana.method.sp._bivariate._global_functions import GlobalFunction
 from liana.method.sp._bivariate._local_functions import LocalFunction
-from liana.method.sp._utils import _add_complexes_to_var, _zscore
+from liana.method.sp._utils import _add_complexes_to_var, _rename_means, _zscore
 from liana.resource.select_resource import _handle_resource
 from liana.utils.mdata_to_anndata import mdata_to_anndata
 
@@ -166,8 +166,8 @@ class SpatialBivariate:
         # join global stats to LRs from resource
         xy_stats = (
             resource
-            .merge(self._rename_means(xy_stats, entity=self.x_name))
-            .merge(self._rename_means(xy_stats, entity=self.y_name))
+            .merge(_rename_means(xy_stats, entity=self.x_name))
+            .merge(_rename_means(xy_stats, entity=self.y_name))
         )
 
         # filter according to props
@@ -315,12 +315,6 @@ class SpatialBivariate:
         unexpected_kwargs = set(kwargs) - expected_params
         if unexpected_kwargs:
             raise ValueError(f"Unexpected keyword arguments: {unexpected_kwargs}")
-
-
-    def _rename_means(self, lr_stats, entity):
-        df = lr_stats.copy()
-        df.columns = df.columns.map(lambda x: entity + '_' + str(x) if x != 'gene' else 'gene')
-        return df.rename(columns={'gene': entity})
 
     def _handle_connectivity(self, adata, connectivity_key):
         if connectivity_key not in adata.obsp.keys():

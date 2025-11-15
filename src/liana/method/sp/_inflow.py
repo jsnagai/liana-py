@@ -1,22 +1,24 @@
 from __future__ import annotations
-from typing import Union, Optional, Callable
+
+from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
 import scanpy as sc
 from anndata import AnnData
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, hstack
 from sklearn.utils.sparsefuncs import mean_variance_axis
-import liana as li
+
+from liana._constants import DefaultValues as V
+from liana._constants import Keys as K
+from liana._docs import d
+from liana.method._pipe_utils import assert_covered, prep_check_adata
 from liana.method._pipe_utils._common import _get_props
 from liana.method.sp._utils import _add_complexes_to_var, _rename_means
-from liana.method._pipe_utils import assert_covered, prep_check_adata
-from liana._logging import _logg
-from liana._constants import Keys as K, DefaultValues as V
-from liana._docs import d
 from liana.resource.select_resource import _handle_resource
 
-class SpatialInflow():
+
+class SpatialInflow:
     """
     A class for computing trivariate (source&ligand->receptor) global and spatial spatial metrics.
 
@@ -27,11 +29,11 @@ class SpatialInflow():
     y_name : str
         Column name in the `resource` DataFrame for receptor genes. Default is 'receptor'.
     """
-    
+
     def __init__(self, x_name: str = 'ligand', y_name: str = 'receptor'):
         self.x_name = x_name
         self.y_name = y_name
-        
+
     @d.dedent
     def __call__(
         self,
@@ -40,23 +42,21 @@ class SpatialInflow():
         resource_name: str = None,
         nz_prop: float = 0.001,
         connectivity_key: str = K.connectivity_key,
-        resource: Optional[pd.DataFrame] = V.resource,
-        interactions: Optional[list] = V.interactions,
-        complex_sep: Optional[str, None] = '_',
-        transform: Optional[Callable] = None,
-        use_raw: Optional[bool, None]=V.use_raw,
-        layer: Optional[str, None]=V.layer,
+        resource: pd.DataFrame | None = V.resource,
+        interactions: list | None = V.interactions,
+        complex_sep: str | None = V.complex_sep,
+        transform: Callable | None = None,
+        use_raw: bool | None=V.use_raw,
+        layer: str | None=V.layer,
         xy_sep: str = V.lr_sep,
         verbose: bool = V.verbose,
         **kwargs
     ) -> AnnData:
-        
         """
         A method for bivariate local spatial metrics.
 
         Parameters
         ----------
-
         %(adata)s
         %(interactions)s
         %(resource)s
@@ -75,7 +75,7 @@ class SpatialInflow():
         xy_sep: str
             Separator to use for interaction names.
         transform
-            Function used to transform the source-ligand values and receptor values. 
+            Function used to transform the source-ligand values and receptor values.
             If None, no transformation is applied.
         %(verbose)s
         **kwargs
@@ -87,7 +87,6 @@ class SpatialInflow():
         l and r are respectively the ligand and receptors expressed in the data and covered in the resource, and n is the
         number of observations.
         """
-        
         # NOTE There are some repetitiions with bivariate scores
         # one could define a shared class to process adata, and split the two thereafter
         resource = _handle_resource(interactions=interactions,
@@ -97,7 +96,7 @@ class SpatialInflow():
                                     y_name=self.y_name,
                                     verbose=verbose
                                     )
-        
+
         adata = prep_check_adata(adata=adata,
                                 use_raw=use_raw,
                                 layer=layer,
@@ -108,7 +107,7 @@ class SpatialInflow():
                                 min_cells=None,
                                 complex_sep=complex_sep,
                                 )
-        
+
         if complex_sep is not None:
             adata = _add_complexes_to_var(
                 adata,
@@ -173,8 +172,6 @@ class SpatialInflow():
         k = ct.shape[1]           # number of cell types
         m = x_mat.shape[1]       # number of LR pairs
 
-        from scipy.sparse import hstack
-
         # Initialize empty list to hold each (cell x ligand) matrix per celltype
         ls_list = []
 
@@ -182,7 +179,7 @@ class SpatialInflow():
         for i in range(ct.shape[1]):
             # Slice the indicator column for one cell type: (n_cells, 1)
             ct_i = ct[:, i]
-            
+
             # Elementwise multiply x_mat (ligand expr) with cell type indicator
             # This will zero out cells not in this cell type
             ls_i = x_mat.multiply(ct_i)
@@ -195,7 +192,7 @@ class SpatialInflow():
         # Min-max transform the ligand * celltype data & apply spatial weighting
         if not isinstance(ls, csr_matrix):
             ls = csr_matrix(ls)
-            
+
         wls = w.dot(ls)
 
         # Normalize by row sums (avoid division by zero)
@@ -242,9 +239,9 @@ class SpatialInflow():
         # Drop non-variable features
         _, var = mean_variance_axis(lrdata.X, axis=0)
         lrdata = lrdata[:, var > 0]
-        
+
         return lrdata
-    
+
     def _transform(self, mat, transform=None, **kwargs):
         if transform is not None:
             return transform(mat, **kwargs)
