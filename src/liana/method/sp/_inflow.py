@@ -45,7 +45,8 @@ class SpatialInflow:
         resource: pd.DataFrame | None = V.resource,
         interactions: list | None = V.interactions,
         complex_sep: str | None = V.complex_sep,
-        transform: Callable | None = None,
+        x_transform: Callable | None = None,
+        y_transform: Callable | None = None,
         use_raw: bool | None=V.use_raw,
         layer: str | None=V.layer,
         xy_sep: str = V.lr_sep,
@@ -74,8 +75,11 @@ class SpatialInflow:
             Separator to use for complex names.
         xy_sep: str
             Separator to use for interaction names.
-        transform
-            Function used to transform the source-ligand values and receptor values.
+        x_transform
+            Function used to transform the source-ligand values.
+            If None, no transformation is applied.
+        y_transform
+            Function used to transform the receptor values.
             If None, no transformation is applied.
         %(verbose)s
         **kwargs
@@ -193,6 +197,9 @@ class SpatialInflow:
         if not isinstance(ls, csr_matrix):
             ls = csr_matrix(ls)
 
+        # Transform ligand matrix
+        ls = self._transform(ls, x_transform, **kwargs)
+
         wls = w.dot(ls)
 
         # Normalize by row sums (avoid division by zero)
@@ -205,7 +212,7 @@ class SpatialInflow:
         wls.data[np.isnan(wls.data)] = 0
 
         # Transform receptor matrix
-        r = self._transform(y_mat, transform, **kwargs)
+        r = self._transform(y_mat, y_transform, **kwargs)
 
         # Ensure r is sparse and repeat across cell types
         if not isinstance(r, csr_matrix):

@@ -101,7 +101,7 @@ def test_vectorized_spearman():
     np.testing.assert_almost_equal(global_res['std'].mean(), 0.46906388, decimal=5)
 
 ### Test on AnnData and LRs
- # NOTE: these should be the same regardless of the local function
+# NOTE: these should be the same regardless of the local function
 adata = generate_toy_spatial()
 expected_gmorans = 0.0994394
 expected_glee = 0.04854206
