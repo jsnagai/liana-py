@@ -38,12 +38,13 @@ class SpatialInflow:
     def __call__(
         self,
         adata: AnnData,
-        groupby: str,
+        groupby: str | None = None,
+        obsm_key: str | None = None,
         resource_name: str = None,
+        resource: pd.DataFrame | None = V.resource,
+        interactions: list = V.interactions,
         nz_prop: float = 0.001,
         connectivity_key: str = K.connectivity_key,
-        resource: pd.DataFrame | None = V.resource,
-        interactions: list | None = V.interactions,
         complex_sep: str | None = V.complex_sep,
         x_transform: Callable | None = None,
         y_transform: Callable | None = None,
@@ -59,6 +60,13 @@ class SpatialInflow:
         Parameters
         ----------
         %(adata)s
+        groupby : str, optional
+            Column name in `adata.obs` containing cell type labels. If provided, a one-hot encoding
+            will be created. Mutually exclusive with `obsm_key`.
+        obsm_key : str, optional
+            Key in `adata.obsm` containing a pre-computed cell type matrix (pandas DataFrame) of shape
+            (n_obs, n_celltypes). Column names will be used as cell type labels. Can contain binary
+            (one-hot) or continuous (probabilities/scores) values. Mutually exclusive with `groupby`.
         %(interactions)s
         %(resource)s
         %(resource_name)s
@@ -135,9 +143,27 @@ class SpatialInflow:
         # Subset adata to only the relevant (ligand + receptor) features
         adata = adata[:, np.intersect1d(entities, adata.var_names)]
 
+        # Validate that exactly one of groupby or obsm_key is provided
+        if (groupby is None) == (obsm_key is None):
+            raise ValueError("Exactly one of 'groupby' or 'obsm_key' must be provided.")
+
         # Build cell-type matrix
-        celltypes = pd.get_dummies(adata.obs[groupby])
-        ct = csr_matrix(celltypes.astype(int).values)
+        if obsm_key is not None:
+            # Use pre-computed cell type probabilities from obsm
+            if obsm_key not in adata.obsm:
+                raise KeyError(f"'{obsm_key}' not found in adata.obsm")
+
+            ct_matrix = adata.obsm[obsm_key]
+            if not isinstance(ct_matrix, pd.DataFrame):
+                raise TypeError(f"obsm['{obsm_key}'] must be a pandas DataFrame with cell type labels as column names")
+
+            ct_labels = ct_matrix.columns
+            ct = csr_matrix(ct_matrix.values)
+        else:
+            # Existing one-hot encoding logic
+            celltypes = pd.get_dummies(adata.obs[groupby])
+            ct_labels = celltypes.columns
+            ct = csr_matrix(celltypes.astype(int).values)
 
         # Compute global stats (proportions) for all features in adata
         xy_stats = pd.DataFrame(
@@ -226,7 +252,7 @@ class SpatialInflow:
         # Create .var index: each column is "cell_type ^ interaction_name"
         var = pd.DataFrame(
             index=(
-                np.repeat(celltypes.columns.astype(str), m) +
+                np.repeat(ct_labels.astype(str), m) +
                 xy_sep +
                 np.tile(xy_stats['interaction'].astype(str), k)
             )

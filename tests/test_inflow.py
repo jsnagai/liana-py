@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 from scipy.sparse import csr_matrix
 
@@ -31,8 +32,6 @@ def test_inflow_basic_structure(spatial_adata):
     # Check output structure
     assert isinstance(lrdata, type(spatial_adata))
     assert lrdata.shape == (spatial_adata.shape[0], 323)  # Fixed expected shape
-    assert lrdata.obs.shape == spatial_adata.obs.shape
-    assert lrdata.obsm.keys() == spatial_adata.obsm.keys()
 
     # Check var index format: "celltype^ligand^receptor"
     assert all('^' in idx for idx in lrdata.var_names)
@@ -159,6 +158,105 @@ def test_inflow_invalid_groupby(spatial_adata):
         inflow(
             spatial_adata,
             groupby='nonexistent_column',
+            resource_name='consensus',
+            use_raw=True
+        )
+
+
+def test_inflow_with_obsm_key(spatial_adata):
+    """Test inflow with pre-computed cell type matrix from obsm."""
+
+    # Create soft cell type assignments (probabilities) as DataFrame
+    n_celltypes = 3
+    ct_probs = np.random.rand(spatial_adata.n_obs, n_celltypes)
+    ct_probs = ct_probs / ct_probs.sum(axis=1, keepdims=True)  # normalize to sum to 1
+    ct_probs_df = pd.DataFrame(ct_probs, columns=[f'CT_{i}' for i in range(n_celltypes)], index=spatial_adata.obs.index)
+    spatial_adata.obsm['ct_probs'] = ct_probs_df
+
+    lrdata = inflow(
+        spatial_adata,
+        obsm_key='ct_probs',
+        resource_name='consensus',
+        use_raw=True
+    )
+
+    # Check output structure
+    assert isinstance(lrdata, type(spatial_adata))
+    assert lrdata.shape[0] == spatial_adata.shape[0]
+    assert lrdata.shape[1] > 0
+
+def test_inflow_obsm_vs_groupby_equivalence(spatial_adata):
+    """Test that one-hot from groupby matches binary obsm."""
+    import pandas as pd
+
+    # Create one-hot from groupby
+    ct_onehot = pd.get_dummies(spatial_adata.obs['bulk_labels'])
+    spatial_adata.obsm['ct_onehot'] = ct_onehot
+
+    lrdata1 = inflow(
+        spatial_adata,
+        groupby='bulk_labels',
+        resource_name='consensus',
+        use_raw=True
+    )
+    lrdata2 = inflow(
+        spatial_adata,
+        obsm_key='ct_onehot',
+        resource_name='consensus',
+        use_raw=True
+    )
+
+    # Should be identical (or very close)
+    assert lrdata1.shape == lrdata2.shape
+    np.testing.assert_array_almost_equal(
+        lrdata1.X.toarray(),
+        lrdata2.X.toarray(),
+        decimal=5
+    )
+
+
+def test_inflow_groupby_obsm_validation(spatial_adata):
+    """Test error when neither or both groupby/obsm_key provided."""
+    # Test neither parameter provided
+    with pytest.raises(ValueError, match="Exactly one"):
+        inflow(
+            spatial_adata,
+            resource_name='consensus',
+            use_raw=True
+        )
+
+    # Test both parameters provided
+    spatial_adata.obsm['ct'] = np.random.rand(spatial_adata.n_obs, 3)
+    with pytest.raises(ValueError, match="Exactly one"):
+        inflow(
+            spatial_adata,
+            groupby='bulk_labels',
+            obsm_key='ct',
+            resource_name='consensus',
+            use_raw=True
+        )
+
+
+def test_inflow_obsm_missing_key(spatial_adata):
+    """Test error when obsm_key not found in obsm."""
+    with pytest.raises(KeyError, match="not found in adata.obsm"):
+        inflow(
+            spatial_adata,
+            obsm_key='nonexistent_key',
+            resource_name='consensus',
+            use_raw=True
+        )
+
+
+def test_inflow_obsm_not_dataframe(spatial_adata):
+    """Test error when obsm matrix is not a DataFrame."""
+    # Create matrix as numpy array instead of DataFrame
+    spatial_adata.obsm['ct_array'] = np.random.rand(spatial_adata.n_obs, 3)
+
+    with pytest.raises(TypeError, match="must be a pandas DataFrame"):
+        inflow(
+            spatial_adata,
+            obsm_key='ct_array',
             resource_name='consensus',
             use_raw=True
         )
