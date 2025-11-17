@@ -121,8 +121,6 @@ class SpatialInflow:
         # Process MuData or AnnData - check instance and process accordingly
         is_mudata = _check_instance(adata)
 
-
-
         # Extract transform kwargs - works the same for both AnnData and MuData
         x_transform_kwargs = kwargs.pop('x_transform_kwargs', {})
         y_transform_kwargs = kwargs.pop('y_transform_kwargs', {})
@@ -208,7 +206,7 @@ class SpatialInflow:
             index=adata.var_names
         ).reset_index().rename(columns={'index': 'gene'})
 
-        # Merge these stats into the resource
+        # Merge these stats into the resource; TODO: add to .var?
         xy_stats = resource.merge(_rename_means(xy_stats, entity=x_name)) \
                            .merge(_rename_means(xy_stats, entity=y_name))
 
