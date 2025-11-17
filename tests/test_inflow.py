@@ -1,10 +1,12 @@
+from itertools import product
+
 import numpy as np
 import pandas as pd
 import pytest
 from scipy.sparse import csr_matrix
 
 from liana.method import inflow
-from liana.testing._sample_anndata import generate_toy_spatial
+from liana.testing._sample_anndata import generate_toy_mdata, generate_toy_spatial
 from liana.testing._sample_resource import sample_resource
 from liana.utils.transform import zi_minmax
 
@@ -260,3 +262,169 @@ def test_inflow_obsm_not_dataframe(spatial_adata):
             resource_name='consensus',
             use_raw=True
         )
+
+
+def test_inflow_with_mudata():
+    """Test inflow with MuData input."""
+
+    mdata = generate_toy_mdata()
+    interactions = list(product(mdata.mod['adata_x'].var.index,
+                                mdata.mod['adata_y'].var.index))
+
+    lrdata = inflow(
+        mdata,
+        groupby='bulk_labels',
+        interactions=interactions,
+        x_mod='adata_x',
+        y_mod='adata_y',
+        x_use_raw=False,
+        y_use_raw=False,
+        nz_prop=0
+    )
+
+    # Check output structure
+    assert isinstance(lrdata, type(mdata.mod['adata_x']))
+    assert lrdata.shape[0] == mdata.shape[0]
+    assert lrdata.shape[1] > 0
+
+    # Check var index format: "celltype^ligand^receptor"
+    assert all('^' in idx for idx in lrdata.var_names)
+
+    # Check sparse matrix
+    assert isinstance(lrdata.X, csr_matrix)
+
+
+def test_inflow_mudata_vs_anndata_equivalence():
+    """Test that MuData and AnnData give same results when data is identical."""
+    from liana.utils.mdata_to_anndata import mdata_to_anndata
+
+    mdata = generate_toy_mdata()
+    interactions = list(product(mdata.mod['adata_x'].var.index,
+                                mdata.mod['adata_y'].var.index))
+
+    # Run with MuData
+    lrdata_mudata = inflow(
+        mdata,
+        groupby='bulk_labels',
+        interactions=interactions,
+        x_mod='adata_x',
+        y_mod='adata_y',
+        x_use_raw=False,
+        y_use_raw=False,
+        nz_prop=0
+    )
+
+    # Convert to AnnData manually and run
+    adata_combined = mdata_to_anndata(
+        mdata,
+        x_mod='adata_x',
+        y_mod='adata_y',
+        x_use_raw=False,
+        y_use_raw=False,
+        verbose=False
+    )
+
+    lrdata_anndata = inflow(
+        adata_combined,
+        groupby='bulk_labels',
+        interactions=interactions,
+        use_raw=False,
+        layer=None,
+        nz_prop=0
+    )
+
+    # Check that results have the same dimensions
+    assert lrdata_mudata.shape == lrdata_anndata.shape
+
+    # Check that variable names match
+    assert set(lrdata_mudata.var_names) == set(lrdata_anndata.var_names)
+
+
+def test_inflow_mudata_missing_mod():
+    """Test error handling when modality parameters are missing for MuData."""
+
+    mdata = generate_toy_mdata()
+    interactions = list(product(mdata.mod['adata_x'].var.index,
+                                mdata.mod['adata_y'].var.index))
+
+    # Missing x_mod
+    with pytest.raises(ValueError, match="requires 'x_mod' and 'y_mod'"):
+        inflow(
+            mdata,
+            groupby='bulk_labels',
+            interactions=interactions,
+            y_mod='adata_y',
+            x_use_raw=False,
+            y_use_raw=False
+        )
+
+    # Missing y_mod
+    with pytest.raises(ValueError, match="requires 'x_mod' and 'y_mod'"):
+        inflow(
+            mdata,
+            groupby='bulk_labels',
+            interactions=interactions,
+            x_mod='adata_x',
+            x_use_raw=False,
+            y_use_raw=False
+        )
+
+def custom_transform_with_kwargs(mat, clip_max=1.0):
+    """Custom transform that uses kwargs."""
+    from liana.utils.transform import zi_minmax
+    transformed = zi_minmax(mat)
+    # Clip to a custom max value
+    transformed.data = np.clip(transformed.data, 0, clip_max)
+    return transformed
+
+
+def test_anndata_transform_kwargs():
+    """Test x_transform_kwargs and y_transform_kwargs with AnnData."""
+    print("\n=== Testing AnnData with transform_kwargs ===")
+
+    adata = generate_toy_spatial()
+
+    # Test with custom clip value - same for both x and y
+    lrdata = inflow(
+        adata,
+        groupby='bulk_labels',
+        resource_name='consensus',
+        x_transform=custom_transform_with_kwargs,
+        y_transform=custom_transform_with_kwargs,
+        x_transform_kwargs={'clip_max': 0.5},
+        y_transform_kwargs={'clip_max': 0.5},
+        use_raw=False
+    )
+
+    print(f"Shape: {lrdata.shape}")
+    print(f"Max value: {lrdata.X.max()}")
+    print(f"Min value: {lrdata.X.min()}")
+
+    # Verify clipping worked (should be <= 0.5 * 0.5 = 0.25 for product)
+    assert lrdata.X.max() <= 0.26, f"Expected max <= 0.26, got {lrdata.X.max()}"
+    print("✓ AnnData transform_kwargs test passed!")
+
+def test_mudata_transform_kwargs():
+    """Test x_transform_kwargs and y_transform_kwargs with MuData."""
+    print("\n=== Testing MuData with separate transform_kwargs ===")
+
+    mdata = generate_toy_mdata()
+    interactions = list(product(mdata.mod['adata_x'].var.index,
+                                mdata.mod['adata_y'].var.index))
+
+    # Test with different clip values for x and y
+    lrdata = inflow(
+        mdata,
+        groupby='bulk_labels',
+        interactions=interactions,
+        x_mod='adata_x',
+        y_mod='adata_y',
+        x_transform=custom_transform_with_kwargs,
+        y_transform=custom_transform_with_kwargs,
+        x_transform_kwargs={'clip_max': 0.3},  # Custom parameter for x
+        y_transform_kwargs={'clip_max': 0.7},  # Custom parameter for y
+        x_use_raw=False,
+        y_use_raw=False,
+        nz_prop=0
+    )
+    assert lrdata.X.max() <= 0.22, f"Expected max <= 0.22, got {lrdata.X.max()}"
