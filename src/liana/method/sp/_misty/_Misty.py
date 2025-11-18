@@ -15,6 +15,7 @@ from liana._logging import _logg
 from liana.method.sp._misty._single_view_models import SingleViewModel
 
 
+@d.dedent
 class MistyData(MuData):
     """
     MistyData Class used to construct multi-view objects
@@ -37,18 +38,17 @@ class MistyData(MuData):
 
     Attributes
     ----------
-    view_names : list[str]
+    view_names
         List of names of the different views
-    spatial_key : str
+    spatial_key
         Key in `data.obsm` containing the spatial coordinates.
-    enforce_obs : bool
+    enforce_obs
         See parameter with the same name.
-    obs : pd.DataFrame
+    obs
         See parameter with the same name.
 
     """
 
-    @d.dedent
     def __init__(self,
                  data: dict | MuData,
                  obs: pd.DataFrame | None = None,
