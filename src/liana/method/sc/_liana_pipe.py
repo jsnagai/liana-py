@@ -21,7 +21,7 @@ from liana.method._pipe_utils._get_mean_perms import _get_mat_idx, _get_means_pe
 from liana.resource import explode_complexes, filter_reassemble_complexes
 from liana.resource.select_resource import _handle_resource
 from liana.utils import mdata_to_anndata
-import liana.method.sc as sc
+import liana.method.sc as lsc
 
 
 def liana_pipe(adata: AnnData,
@@ -42,7 +42,7 @@ def liana_pipe(adata: AnnData,
                layer: str | None,
                supp_columns: list | None = None,
                return_all_lrs: bool = False,
-               _score: sc._Method.Method | None = None,
+               _score: lsc._Method.Method | None = None,
                _methods: list = None,
                _consensus_opts: list = None,
                _aggregate_method: str | None = None,
