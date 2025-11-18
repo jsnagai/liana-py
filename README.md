@@ -49,9 +49,33 @@ For further information please check LIANA's [API documentation](https://liana-p
 
 ## Cite LIANA+:
 
-Dimitrov D., Schäfer P.S.L, Farr E., Rodriguez Mier P., Lobentanzer S., Badia-i-Mompel P., Dugourd A., Tanevski J., Ramirez Flores R.O. and Saez-Rodriguez J. LIANA+ provides an all-in-one framework for cell–cell communication inference. Nat Cell Biol (2024). https://doi.org/10.1038/s41556-024-01469-w
+```
+@article {Dimitrov2024,
+    author = {Dimitrov, Daniel and Sch{\"a}fer, Philipp Sven Lars and  Farr, Elias and Rodriguez-Mier, Pablo and Lobentanzer, Sebastian and Badia-i-Mompel, Pau and Dugourd, Aurelien and Tanevski, Jovan and Ramirez Flores, Ricardo Omar and Saez-Rodriguez, Julio},
+    title = {LIANA+ provides an all-in-one framework for cell--cell communication inference},
+    journal = {Nature Cell Biology},
+    year = {2024},
+    volume = {26},
+    number = {9},
+    pages = {1613--1622},
+    DOI = {10.1038/s41556-024-01469-w},
+    URL = {https://doi.org/10.1038/s41556-024-01469-w}
+}
+```
 
-Dimitrov, D., Türei, D., Garrido-Rodriguez M., Burmedi P.L., Nagai, J.S., Boys, C., Flores, R.O.R., Kim, H., Szalai, B., Costa, I.G., Valdeolivas, A., Dugourd, A. and Saez-Rodriguez, J. Comparison of methods and resources for cell-cell communication inference from single-cell RNA-Seq data. Nat Commun 13, 3224 (2022). https://doi.org/10.1038/s41467-022-30755-0
+```
+@article {Dimitrov2022,
+    author = {Dimitrov, Daniel and T{\"u}rei, D{\'e}nes and Garrido-Rodriguez, Martin and Burmedi, Paul L. and Nagai, James S. and Boys, Charlotte and Ramirez Flores, Ricardo O. and Kim, Hyojin and Szalai, Bence and Costa, Ivan G. and Valdeolivas, Alberto and Dugourd, Aur{\'e}lien and Saez-Rodriguez, Julio},
+    title = {Comparison of methods and resources for cell-cell communication inference from single-cell RNA-Seq data},
+    journal = {Nature Communications},
+    year = {2022},
+    volume = {13},
+    number = {1},
+    pages = {3224},
+    DOI = {10.1038/s41467-022-30755-0},
+    URL = {https://doi.org/10.1038/s41467-022-30755-0}
+}
+```
 
 Please also consider citing any of the methods and/or resources that were particularly relevant for your research!
 
