@@ -197,6 +197,8 @@ class Method(MethodMeta):
                  n_jobs: int = 1,
                  resource: DataFrame | None = V.resource,
                  interactions: list | None = V.interactions,
+                 spatial_key: str = 'spatial',
+                 spatial_proximity_kwargs: dict | None = None,
                  mdata_kwargs: dict | None = None,
                  inplace: bool = V.inplace,
                  verbose: bool | None = V.verbose,
@@ -229,6 +231,8 @@ class Method(MethodMeta):
             Number of jobs to run in parallel.
         %(resource)s
         %(interactions)s
+        %(spatial_key)s
+        %(spatial_proximity_kwargs)s
         %(mdata_kwargs)s
         %(inplace)s
 
@@ -262,6 +266,8 @@ class Method(MethodMeta):
                                n_jobs=n_jobs,
                                use_raw=use_raw,
                                layer=layer,
+                               spatial_key=spatial_key,
+                               spatial_proximity_kwargs=spatial_proximity_kwargs,
                                mdata_kwargs=mdata_kwargs
                                )
         if inplace:

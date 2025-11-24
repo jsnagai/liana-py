@@ -14,6 +14,7 @@ from liana._constants import CommonColumns as C
 from liana._constants import InternalValues as I
 from liana._constants import MethodColumns as M
 from liana._constants import PrimaryColumns as P
+from liana._docs import d
 from liana.method._pipe_utils import assert_covered, filter_resource, prep_check_adata
 from liana.method._pipe_utils._aggregate import _aggregate
 from liana.method._pipe_utils._common import _get_groupby_subset, _get_props, _join_stats
@@ -21,8 +22,10 @@ from liana.method._pipe_utils._get_mean_perms import _get_mat_idx, _get_means_pe
 from liana.resource import explode_complexes, filter_reassemble_complexes
 from liana.resource.select_resource import _handle_resource
 from liana.utils import mdata_to_anndata
+from liana.utils.spatial_neighbors import cell_type_spatial_proximity
 
 
+@d.dedent
 def liana_pipe(adata: anndata.AnnData,
                groupby: str,
                resource_name: str,
@@ -41,6 +44,8 @@ def liana_pipe(adata: anndata.AnnData,
                layer: str | None,
                supp_columns: list | None = None,
                return_all_lrs: bool = False,
+               spatial_key: str = 'spatial',
+               spatial_proximity_kwargs: dict | None = None,
                _score=None,
                _methods: list = None,
                _consensus_opts: list = None,
@@ -52,42 +57,24 @@ def liana_pipe(adata: anndata.AnnData,
 
     Parameters
     ----------
-    adata
-        Annotated data object.
-    groupby
-        The key of the observations grouping to consider.
-    resource_name
-        Name of the resource to be loaded and use for ligand-receptor inference.
-    resource
-        Parameter to enable external resources to be passed. Expects a pandas dataframe
-        with [`ligand`, `receptor`] columns. None by default. If provided will overrule
-        the resource requested via `resource_name`
-    expr_prop
-        Minimum expression proportion for the ligands/receptors (and their subunits) in the
-         corresponding cell identities. Set to `0`, to return unfiltered results.
-    min_cells
-        Minimum cells per cell identity
-    base
-        The base by which to do expm1 (relevant only for 1vsRest logFC calculation)
-    de_method
-        Differential expression method. `scanpy.tl.rank_genes_groups` is used to rank genes
-        according to 1vsRest. The default method is 't-test'. Only relevant if p-values
-        are included in `supp_cols`
-    n_perms
-        n permutations (relevant only for permutation-based methods)
-    seed
-        Random seed for reproducibility
-    verbose
-        Verbosity flag
-    use_raw
-        Use raw attribute of adata if present.
-    layer
-        Layer in anndata.AnnData.layers to use. If None, use anndata.AnnData.X.
+    %(adata)s
+    %(groupby)s
+    %(resource_name)s
+    %(resource)s
+    %(interactions)s
+    %(groupby_pairs)s
+    %(expr_prop)s
+    %(min_cells)s
+    %(base)s
+    %(de_method)s
+    %(n_perms_sc)s
+    %(seed)s
+    %(verbose)s
+    %(use_raw)s
+    %(layer)s
     supp_columns
-        additional columns to be added to the output of each method.
-    return_all_lrs
-        Bool whether to return all LRs, or only those that surpass the expr_prop threshold.
-        `False` by default.
+        Additional columns to be added to the output of each method.
+    %(return_all_lrs)s
     _score
         Instance of Method classes (None by default - returns LR stats - no methods used).
     _methods
@@ -96,10 +83,13 @@ def liana_pipe(adata: anndata.AnnData,
         Ways to aggregate interactions across methods by default does all aggregations (['Specificity', 'Magnitude']).
     _aggregate_method
         RobustRankAggregate('rra') or mean rank ('mean').
+    %(spatial_key)s
+    %(spatial_proximity_kwargs)s
+    %(mdata_kwargs)s
 
     Returns
     -------
-    A adata frame with ligand-receptor results
+    A DataFrame with ligand-receptor results
 
     """
     if mdata_kwargs is None:
@@ -143,6 +133,7 @@ def liana_pipe(adata: anndata.AnnData,
                              min_cells=min_cells,
                              use_raw=use_raw,
                              layer=layer,
+                             obsm=adata.obsm if spatial_key else None,
                              verbose=verbose)
 
     if M.mat_mean in _add_cols:
@@ -199,6 +190,24 @@ def liana_pipe(adata: anndata.AnnData,
         on = [x for x in P.complete if x != P.target]
         lr_res = _sum_means(lr_res, what=C.receptor_means, on=on)
 
+    # Calculate spatial proximity if available and add to lr_res
+    if spatial_key in adata.obsm:
+        if spatial_proximity_kwargs is None:
+            spatial_proximity_kwargs = {}
+
+        proximity_df = cell_type_spatial_proximity(
+            groupby=adata.obs['@label'],
+            coordinates=adata.obsm[spatial_key],
+            **spatial_proximity_kwargs
+        )
+
+        lr_res = lr_res.merge(
+            proximity_df[['source', 'target', 'proximity']],
+            on=['source', 'target'],
+            how='left'
+        )
+        lr_res['proximity'] = lr_res['proximity'].fillna(0.0)
+
     # Calculate Score
     if _score is not None:
         if _score.method_name == "Rank_Aggregate":
@@ -211,6 +220,7 @@ def liana_pipe(adata: anndata.AnnData,
                 lrs[method.method_name] = \
                     _run_method(lr_res=lr_res.copy(),
                                 adata=adata,
+                                groupby=groupby,
                                 expr_prop=expr_prop,
                                 _score=method,
                                 _key_cols=_key_cols,
@@ -235,6 +245,7 @@ def liana_pipe(adata: anndata.AnnData,
         else:  # Run the specific method in mind
             lr_res = _run_method(lr_res=lr_res,
                                  adata=adata,
+                                 groupby=groupby,
                                  expr_prop=expr_prop,
                                  _score=_score, _key_cols=_key_cols,
                                  _complex_cols=_complex_cols,
@@ -370,6 +381,7 @@ def _expm1_base(X, base):
 
 def _run_method(lr_res: pandas.DataFrame,
                 adata: anndata.AnnData,
+                groupby: str,
                 expr_prop: float,
                 _score,
                 _key_cols: list,
@@ -380,7 +392,7 @@ def _run_method(lr_res: pandas.DataFrame,
                 return_all_lrs: bool,
                 n_jobs: int,
                 verbose: bool,
-                _aggregate_flag: bool = False  # Indicates whether we're generating the consensus
+                _aggregate_flag: bool = False  # relevant for rank_aggregate
                 ) -> pd.DataFrame:
     # re-assemble complexes - specific for each method
     lr_res = filter_reassemble_complexes(lr_res=lr_res,
@@ -391,6 +403,11 @@ def _run_method(lr_res: pandas.DataFrame,
 
     _add_cols = _add_cols + [P.ligand, P.receptor]
     relevant_cols = reduce(np.union1d, [_key_cols, _complex_cols, _add_cols])
+
+    # Preserve proximity column if present
+    if 'proximity' in lr_res.columns:
+        relevant_cols = list(relevant_cols) + ['proximity']
+
     if return_all_lrs:
         relevant_cols = list(relevant_cols) + [I.lrs_to_keep]
         # separate those that pass from rest
@@ -398,6 +415,9 @@ def _run_method(lr_res: pandas.DataFrame,
         rest_res = rest_res[relevant_cols]
         lr_res = lr_res[lr_res[I.lrs_to_keep]]
     lr_res = lr_res[relevant_cols]
+
+    # Extract proximity weights if present in lr_res
+    proximity_weights = lr_res['proximity'].values if 'proximity' in lr_res.columns else None
 
     if (M.mat_max in _add_cols) & (_score.method_name == "CellChat"):
         # CellChat matrix_max
@@ -433,9 +453,14 @@ def _run_method(lr_res: pandas.DataFrame,
     else:  # non-perm funs
         scores = _score.fun(x=lr_res)
 
+        # Apply spatial weighting AFTER scoring for non-permutation methods
+        if proximity_weights is not None:
+            weighted_magnitude = scores[0] * proximity_weights if scores[0] is not None else None
+            weighted_specificity = scores[1] * proximity_weights if scores[1] is not None else None
+            scores = (weighted_magnitude, weighted_specificity)
+
     lr_res.loc[:, _score.magnitude] = scores[0]
     lr_res.loc[:, _score.specificity] = scores[1]
-
 
     if return_all_lrs:
         # re-append rest of results
@@ -458,6 +483,10 @@ def _run_method(lr_res: pandas.DataFrame,
     if _score.specificity is not None: # when n_perms is None
         if lr_res[_score.specificity].isna().all():
             lr_res = lr_res.drop(_score.specificity, axis=1)
+
+    # Remove proximity column if present (internal use only)
+    if 'proximity' in lr_res.columns:
+        lr_res = lr_res.drop('proximity', axis=1)
 
     return lr_res
 
