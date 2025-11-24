@@ -76,7 +76,7 @@ class AggregateClass(MethodMeta):
                  interactions: list | None = V.interactions,
                  mdata_kwargs: dict | None = None,
                  spatial_key: str | None = None,
-                 spatial_proximity_kwargs: dict | None = None,
+                 spatial_kwargs: dict | None = None,
                  inplace: bool = V.inplace,
                  verbose: bool | None = V.verbose,
                  ):
@@ -113,7 +113,7 @@ class AggregateClass(MethodMeta):
         %(interactions)s
         %(mdata_kwargs)s
         %(spatial_key)s
-        %(spatial_proximity_kwargs)s
+        %(spatial_kwargs)s
         %(inplace)s
 
         Returns
@@ -146,7 +146,7 @@ class AggregateClass(MethodMeta):
                                _aggregate_method=aggregate_method,
                                _consensus_opts=consensus_opts,
                                spatial_key=spatial_key,
-                               spatial_proximity_kwargs=spatial_proximity_kwargs,
+                               spatial_kwargs=spatial_kwargs,
                                mdata_kwargs=mdata_kwargs
                                )
 

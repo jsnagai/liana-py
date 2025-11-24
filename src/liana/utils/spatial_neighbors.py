@@ -4,6 +4,7 @@ from anndata import AnnData
 from scipy.stats import trim_mean
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import normalize
+from tqdm import tqdm
 
 from liana._constants import DefaultValues as V
 from liana._constants import Keys as K
@@ -61,9 +62,7 @@ def spatial_neighbors(adata: AnnData,
     Parameters
     ----------
     %(adata)s
-    bandwidth
-         Denotes signaling length (`l`) and controls the maximum distance at which two spots are considered.
-         Corresponds to the units in which spatial coordinates are expressed.
+    %(bandwidth)s
     cutoff
         Values below this cutoff will be set to 0.
     max_neighbours
@@ -153,14 +152,16 @@ def spatial_neighbors(adata: AnnData,
 
 
 @d.dedent
-def cell_type_spatial_proximity(
-    groupby,
-    coordinates,
-    interaction_range=250,
-    contact_range=None,
+def spatial_pair_proximity(
+    adata: AnnData,
+    groupby: str,
+    spatial_key='spatial',
+    bandwidth=250,
+    contact_bandwidth=None,
     min_cells_in_proximity=10,
     trim_fraction=0.1,
-    kernel='gaussian'
+    kernel='gaussian',
+    verbose=V.verbose
 ):
     """
     Computes aggregated spatial statistics and proximity scores between cell types.
@@ -171,14 +172,11 @@ def cell_type_spatial_proximity(
 
     Parameters
     ----------
+    %(adata)s
     %(groupby)s
-    %(coordinates)s
-    interaction_range : float, optional
-        Bandwidth for 'proximity' score calculation and distance threshold for 'interacting' flag.
-        Default is 250.
-    contact_range : float, optional
-        Bandwidth for 'contact_proximity' calculation and distance threshold for 'contact_interacting' flag.
-        If None, contact proximity is not calculated. Default is None.
+    %(spatial_key)s
+    %(bandwidth)s
+    %(contact_bandwidth)s
     min_cells_in_proximity : int, optional
         Minimum number of cell pairs within range required to flag an interaction as significant.
         Default is 10.
@@ -186,6 +184,7 @@ def cell_type_spatial_proximity(
         Fraction of outliers to trim from each tail when calculating mean distance (0-0.5).
         Default is 0.1 (trim 10% from each tail).
     %(kernel)s
+    %(verbose)s
 
     Returns
     -------
@@ -194,10 +193,10 @@ def cell_type_spatial_proximity(
         - source: source cell type
         - target: target cell type
         - mean_distance: trimmed mean distance between cell types
-        - interacting: binary flag (1 if >= min_cells_in_proximity pairs within interaction_range, else 0)
-        - proximity: proximity score calculated by applying kernel to mean_distance with interaction_range bandwidth
-        - contact_interacting: (optional, if contact_range is not None) binary flag for contact-range interactions
-        - contact_proximity: (optional, if contact_range is not None) proximity score using contact_range bandwidth
+        - interacting: binary flag (1 if >= min_cells_in_proximity pairs within bandwidth, else 0)
+        - proximity: proximity score calculated by applying kernel to mean_distance with bandwidth
+        - contact_interacting: (optional, if contact_bandwidth is not None) binary flag for contact interactions
+        - contact_proximity: (optional, if contact_bandwidth is not None) proximity score using contact_bandwidth
 
     Notes
     -----
@@ -209,77 +208,76 @@ def cell_type_spatial_proximity(
 
     Examples
     --------
-    >>> import numpy as np
-    >>> import pandas as pd
-    >>> # Create example data
-    >>> groupby = np.array(['TypeA', 'TypeA', 'TypeB', 'TypeB'])
-    >>> coordinates = np.array([[0, 0], [1, 1], [10, 10], [11, 11]])
-    >>> proximity_df = cell_type_spatial_proximity(groupby, coordinates)
-    >>> proximity_df
+    >>> import scanpy as sc
+    >>> adata = sc.datasets.pbmc68k_reduced()
+    >>> adata.obsm['spatial'] = np.random.randn(adata.shape[0], 2) * 100
+    >>> proximity_df = spatial_pair_proximity(adata, groupby='bulk_labels')
+    >>> proximity_df.head()
     """
-    groupby = np.asarray(groupby)
-    coordinates = np.asarray(coordinates, dtype=float)
+    # groupby_labels use categories if categorical
+    groupby_labels = np.asarray(adata.obs[groupby])
+    coordinates = np.asarray(adata.obsm[spatial_key], dtype=float)
 
-    unique_types = np.unique(groupby)
+    unique_types = np.unique(groupby_labels)
     stats_list = []
 
     # Iterate through all cell type pairs
-    for type_a in unique_types:
-        idx_a = np.where(groupby == type_a)[0]
+    pair_iterator = [(type_a, type_b) for type_a in unique_types for type_b in unique_types]
+
+    for type_a, type_b in tqdm(pair_iterator, desc="Computing cell type proximities", disable=not verbose):
+        idx_a = np.where(groupby_labels == type_a)[0]
         coords_a = coordinates[idx_a]
+        idx_b = np.where(groupby_labels == type_b)[0]
+        coords_b = coordinates[idx_b]
 
-        for type_b in unique_types:
-            idx_b = np.where(groupby == type_b)[0]
-            coords_b = coordinates[idx_b]
+        if len(idx_a) == 0 or len(idx_b) == 0:
+            continue
 
-            if len(idx_a) == 0 or len(idx_b) == 0:
-                continue
+        # Handle self-interaction (exclude cell itself as neighbor)
+        is_self = (type_a == type_b)
+        k_neighbors = 2 if is_self else 1
 
-            # Handle self-interaction (exclude cell itself as neighbor)
-            is_self = (type_a == type_b)
-            k_neighbors = 2 if is_self else 1
+        if is_self and len(idx_b) < 2:
+            continue
 
-            if is_self and len(idx_b) < 2:
-                continue
+        # Nearest neighbor search (1-NN)
+        nn = NearestNeighbors(n_neighbors=k_neighbors, metric="euclidean", n_jobs=-1)
+        nn.fit(coords_b)
+        distances, _ = nn.kneighbors(coords_a)
 
-            # Nearest neighbor search (1-NN)
-            nn = NearestNeighbors(n_neighbors=k_neighbors, metric="euclidean", n_jobs=-1)
-            nn.fit(coords_b)
-            distances, _ = nn.kneighbors(coords_a)
+        # If self, take 2nd column; if different, take 1st column
+        raw_dists = distances[:, 1] if is_self else distances[:, 0]
 
-            # If self, take 2nd column; if different, take 1st column
-            raw_dists = distances[:, 1] if is_self else distances[:, 0]
+        # --- Aggregation ---
 
-            # --- Aggregation ---
+        # 1. Trimmed mean distance (core metric)
+        avg_dist = trim_mean(raw_dists, proportiontocut=trim_fraction)
 
-            # 1. Trimmed mean distance (core metric)
-            avg_dist = trim_mean(raw_dists, proportiontocut=trim_fraction)
+        # 2. Binary flags (significance based on counts)
+        count_long = np.sum(raw_dists <= bandwidth)
+        is_interacting = count_long >= min_cells_in_proximity
 
-            # 2. Binary flags (significance based on counts)
-            count_long = np.sum(raw_dists <= interaction_range)
-            is_interacting = count_long >= min_cells_in_proximity
+        # 3. Proximity score (kernel applied to mean_distance)
+        prox_score = _kernel_function(avg_dist, bandwidth=bandwidth, kernel=kernel)
 
-            # 3. Proximity score (kernel applied to mean_distance)
-            prox_score = _kernel_function(avg_dist, bandwidth=interaction_range, kernel=kernel)
+        # Build result dict
+        result_dict = {
+            "source": type_a,
+            "target": type_b,
+            "mean_distance": avg_dist,
+            "interacting": int(is_interacting),
+            "proximity": prox_score
+        }
 
-            # Build result dict
-            result_dict = {
-                "source": type_a,
-                "target": type_b,
-                "mean_distance": avg_dist,
-                "interacting": int(is_interacting),
-                "proximity": prox_score
-            }
+        # 4. Optional contact proximity
+        if contact_bandwidth is not None:
+            count_short = np.sum(raw_dists <= contact_bandwidth)
+            is_physically_interacting = count_short >= min_cells_in_proximity
+            contact_prox_score = _kernel_function(avg_dist, bandwidth=contact_bandwidth, kernel=kernel)
 
-            # 4. Optional contact proximity
-            if contact_range is not None:
-                count_short = np.sum(raw_dists <= contact_range)
-                is_physically_interacting = count_short >= min_cells_in_proximity
-                contact_prox_score = _kernel_function(avg_dist, bandwidth=contact_range, kernel=kernel)
+            result_dict["contact_interacting"] = int(is_physically_interacting)
+            result_dict["contact_proximity"] = contact_prox_score
 
-                result_dict["contact_interacting"] = int(is_physically_interacting)
-                result_dict["contact_proximity"] = contact_prox_score
-
-            stats_list.append(result_dict)
+        stats_list.append(result_dict)
 
     return pd.DataFrame(stats_list)

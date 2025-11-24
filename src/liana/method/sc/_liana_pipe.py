@@ -22,7 +22,7 @@ from liana.method._pipe_utils._get_mean_perms import _get_mat_idx, _get_means_pe
 from liana.resource import explode_complexes, filter_reassemble_complexes
 from liana.resource.select_resource import _handle_resource
 from liana.utils import mdata_to_anndata
-from liana.utils.spatial_neighbors import cell_type_spatial_proximity
+from liana.utils.spatial_neighbors import spatial_pair_proximity
 
 
 @d.dedent
@@ -45,7 +45,7 @@ def liana_pipe(adata: anndata.AnnData,
                supp_columns: list | None = None,
                return_all_lrs: bool = False,
                spatial_key: str = 'spatial',
-               spatial_proximity_kwargs: dict | None = None,
+               spatial_kwargs: dict | None = None,
                _score=None,
                _methods: list = None,
                _consensus_opts: list = None,
@@ -84,7 +84,7 @@ def liana_pipe(adata: anndata.AnnData,
     _aggregate_method
         RobustRankAggregate('rra') or mean rank ('mean').
     %(spatial_key)s
-    %(spatial_proximity_kwargs)s
+    %(spatial_kwargs)s
     %(mdata_kwargs)s
 
     Returns
@@ -192,13 +192,15 @@ def liana_pipe(adata: anndata.AnnData,
 
     # Calculate spatial proximity if available and add to lr_res
     if spatial_key in adata.obsm:
-        if spatial_proximity_kwargs is None:
-            spatial_proximity_kwargs = {}
+        if spatial_kwargs is None:
+            spatial_kwargs = {}
 
-        proximity_df = cell_type_spatial_proximity(
-            groupby=adata.obs['@label'],
-            coordinates=adata.obsm[spatial_key],
-            **spatial_proximity_kwargs
+        proximity_df = spatial_pair_proximity(
+            adata=adata,
+            groupby='@label',
+            spatial_key=spatial_key,
+            verbose=verbose,
+            **spatial_kwargs
         )
 
         lr_res = lr_res.merge(

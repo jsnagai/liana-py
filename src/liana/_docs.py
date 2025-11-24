@@ -202,11 +202,11 @@ _mask_negatives = """\
 mask_negatives
     Whether to mask negative-negative (low-low) or uncategorized interactions."""
 
-_spatial_proximity_kwargs = """
-spatial_proximity_kwargs
-    Keyword arguments passed to `liana.utils.cell_type_spatial_proximity()` for computing
+_spatial_kwargs = """
+spatial_kwargs
+    Keyword arguments passed to `liana.utils.spatial_pair_proximity()` for computing
     spatial proximity weights. Default is None, which uses default values
-    (interaction_range=250, kernel='gaussian', trim_fraction=0.1)."""
+    (bandwidth=250, kernel='gaussian', trim_fraction=0.1)."""
 
 _kernel = """
 kernel
@@ -217,6 +217,16 @@ kernel
 _coordinates = """
 coordinates
     Spatial coordinates (e.g., in µm) with shape (n_cells, n_dimensions)."""
+
+_bandwidth = """
+bandwidth
+    Denotes signaling length and controls the maximum distance at which two spots/cells are considered.
+    Corresponds to the units in which spatial coordinates are expressed."""
+
+_contact_bandwidth = """
+contact_bandwidth
+    Bandwidth for contact proximity calculation and distance threshold for contact interactions.
+    If None, contact proximity is not calculated. Default is None."""
 
 
 # Plot docstrings
@@ -369,7 +379,9 @@ d = DocstringProcessor(
     cmap=_cmap,
     figure_size=_figure_size,
     return_fig=_return_fig,
-    spatial_proximity_kwargs=_spatial_proximity_kwargs,
+    spatial_kwargs=_spatial_kwargs,
+    bandwidth=_bandwidth,
+    contact_bandwidth=_contact_bandwidth,
     kernel=_kernel,
     coordinates=_coordinates,
 

@@ -198,7 +198,7 @@ class Method(MethodMeta):
                  resource: DataFrame | None = V.resource,
                  interactions: list | None = V.interactions,
                  spatial_key: str = 'spatial',
-                 spatial_proximity_kwargs: dict | None = None,
+                 spatial_kwargs: dict | None = None,
                  mdata_kwargs: dict | None = None,
                  inplace: bool = V.inplace,
                  verbose: bool | None = V.verbose,
@@ -232,7 +232,7 @@ class Method(MethodMeta):
         %(resource)s
         %(interactions)s
         %(spatial_key)s
-        %(spatial_proximity_kwargs)s
+        %(spatial_kwargs)s
         %(mdata_kwargs)s
         %(inplace)s
 
@@ -267,7 +267,7 @@ class Method(MethodMeta):
                                use_raw=use_raw,
                                layer=layer,
                                spatial_key=spatial_key,
-                               spatial_proximity_kwargs=spatial_proximity_kwargs,
+                               spatial_kwargs=spatial_kwargs,
                                mdata_kwargs=mdata_kwargs
                                )
         if inplace:
