@@ -3,11 +3,14 @@ import pandas as pd
 from anndata import AnnData
 from joblib import Parallel, delayed
 from scipy.sparse import csr_matrix, diags, issparse
+from tqdm import trange, tqdm
 
 from liana._constants import DefaultValues as V
+from liana._logging import _logg
+from liana._docs import d
 
 
-def _split_complex(name: str, complex_sep: str = "_"):
+def _split_complex(name: str, complex_sep: str = V.complex_sep):
     """Helper for splitting complex names."""
     toks = name.split(complex_sep)
     if len(toks) > 1:
@@ -17,10 +20,10 @@ def _split_complex(name: str, complex_sep: str = "_"):
 
 def _run_single_permutation(
     shuffled_labels: np.ndarray,
-    lrdata_X,
-    interaction_names: np.ndarray,
+    X,
     celltype_names: list,
-    xy_sep: str,
+    interaction_names: np.ndarray,
+    lr_sep: str = V.lr_sep,
 ) -> dict:
     """Run a single permutation using precomputed shuffled labels."""
     cats = pd.Categorical(shuffled_labels, categories=celltype_names, ordered=False)
@@ -40,7 +43,7 @@ def _run_single_permutation(
     t_sparse = t_sparse @ diags(1.0 / col_sums)
 
     # Ensure X is sparse CSR
-    X = lrdata_X if issparse(lrdata_X) else csr_matrix(lrdata_X)
+    X = X if issparse(X) else csr_matrix(X)
 
     # Aggregation
     result = t_sparse.T @ X
@@ -52,53 +55,53 @@ def _run_single_permutation(
         np.asarray(celltype_names, dtype=str),
         interaction_names.shape[0]
     )
-    keys = np.char.add(np.char.add(interaction_names_tiled, xy_sep), celltype_names_repeated)
+    keys = np.char.add(np.char.add(interaction_names_tiled, lr_sep), celltype_names_repeated)
 
     return dict(zip(keys.tolist(), values.tolist(), strict=True))
 
-def compute_global_score(
-    lrdata: AnnData,
+@d.get_sections
+def compute_global_specificity(
+    adata: AnnData,
     groupby: str,
-    xy_sep: str = V.lr_sep,
+    lr_sep: str = V.lr_sep,
     complex_sep: str = V.complex_sep,
-    n_perms: int = 500,
-    seed: int = 42,
+    n_perms: int = V.n_perms,
+    seed: int = V.seed,
     n_jobs: int = -1,
-    verbose: bool = True,
+    verbose: bool = V.verbose,
 ) -> None:
     """
-    Computes global score and calculates permutation test p-values.
+    Computes global specificity and calculates permutation test p-values.
 
     Args:
-        lrdata (AnnData): The annotated data matrix output from inflow score.
-        groupby (str): The grouping column (cell type) in `lrdata.obs`.
-        xy_sep (str, optional): Separator for names. Defaults to `V.lr_sep` ('^').
+        {adata}
+        {groupby}
+        lr_sep (str, optional): Separator for names. Defaults to `V.lr_sep` ('^').
         complex_sep (str, optional): Separator for splitting complex names. Defaults to "_".
-        n_perms (int, optional): Number of permutations for p-value calculation. Defaults to 500.
-        seed (int, optional): Random seed for reproducibility. Defaults to 42.
-        n_jobs (int, optional): Number of parallel jobs. Defaults to -1 (all processors).
+        {n_perms}
+        {seed}
+        {verbose}
 
     Returns
     -------
-        None: The result with 'lr_mean' and 'pval' is stored in `lrdata.uns["global_score"]`.
+        None: The result with 'lr_mean' and 'pval' is stored in `adata.uns["global_interactions"]`.
     """
-    if groupby not in lrdata.obs.columns:
+    if groupby not in adata.obs.columns:
         raise KeyError(
-            f"`groupby`='{groupby}' not found in lrdata.obs. "
-            "Use the same grouping column used to build lrdata."
+            f"`groupby`='{groupby}' not found in adata.obs. "
+            "Use the same grouping column used to build adata."
         )
 
     rng_main = np.random.default_rng(seed)
-    original_groupby_labels = lrdata.obs[groupby].copy()
-
+    original_groupby_labels = adata.obs[groupby].copy()
     # --- Part A: Observed score (sparse) ---
 
     # Fixed column order for cell types
-    celltypes = pd.get_dummies(lrdata.obs[groupby])
+    celltypes = pd.get_dummies(adata.obs[groupby])
     celltype_names = list(celltypes.columns)
 
     # Map original labels to fixed indices
-    cats_obs = pd.Categorical(lrdata.obs[groupby].values, categories=celltype_names, ordered=False)
+    cats_obs = pd.Categorical(adata.obs[groupby].values, categories=celltype_names, ordered=False)
     col_idx_obs = cats_obs.codes
 
     n_cells = col_idx_obs.size
@@ -115,7 +118,7 @@ def compute_global_score(
     t_sparse = t_sparse @ diags(1.0 / col_sums)
 
     # Ensure X is sparse CSR
-    X_raw = lrdata.X
+    X_raw = adata.X
     X = X_raw if issparse(X_raw) else csr_matrix(X_raw)
 
     # Aggregation
@@ -123,22 +126,22 @@ def compute_global_score(
     values = (result.toarray() if issparse(result) else np.asarray(result)).ravel()
 
     # Names
-    interaction_names = lrdata.var.index.astype(str).values
+    interaction_names = adata.var.index.astype(str).values
 
     # Build full names "L^R^Source^Target"
     full_names = np.char.add(
         np.char.add(
             np.tile(interaction_names.astype(str), n_types),
-            xy_sep
+            lr_sep
         ),
         np.repeat(np.asarray(celltype_names, dtype=str), interaction_names.shape[0])
     )
 
     # Build observed df
-    parts = [n.split(xy_sep) for n in full_names.tolist()]
+    parts = [n.split(lr_sep) for n in full_names.tolist()]
     df = pd.DataFrame(parts, columns=["source", "ligand", "receptor", "target"])
     df["lr_mean"] = values
-    df["pval"] = 0.0
+    df["pval"] = np.nan
 
     # Complex parsing
     lig_primary, lig_complex = zip(*df["ligand"].map(lambda x: _split_complex(x, complex_sep)), strict=True)
@@ -164,7 +167,7 @@ def compute_global_score(
     ]
 
     if verbose:
-        print(f"Running {n_perms} permutations in parallel...")
+        _logg(f"Running {n_perms} permutations in parallel...")
 
     joblib_verbose = 5 if verbose else 0
 
@@ -172,11 +175,11 @@ def compute_global_score(
     permuted_scores_list = Parallel(n_jobs=n_jobs, verbose=joblib_verbose)(
         delayed(_run_single_permutation)(
             shuffled_labels=shuffled_labels,
-            lrdata_X=X,
+            X=X,
             interaction_names=interaction_names,
             celltype_names=celltype_names,
-            xy_sep=xy_sep,
-        ) for shuffled_labels in permuted_labels_list
+            lr_sep=lr_sep,
+        ) for shuffled_labels in tqdm(permuted_labels_list, desc="Running permutations")
     )
 
     # Aggregate
@@ -200,4 +203,4 @@ def compute_global_score(
     ]]
 
     # Save result
-    lrdata.uns["global_score"] = observed_df
+    adata.uns["global_interactions"] = observed_df
