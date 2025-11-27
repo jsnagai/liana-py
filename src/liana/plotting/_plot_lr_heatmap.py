@@ -4,72 +4,93 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from anndata import AnnData  # Assuming 'lrdata' is an anndata object, common in this context
+from anndata import AnnData 
+
+from liana._constants import DefaultValues as V
+from liana._constants import Keys as K
+from liana._docs import d
 
 
+@d.dedent
 def lr_heatmap(
-    ligand: str,
-    receptor: str,
-    lrdata: AnnData,
-    groupby: str,
-    sep: str = "^",
+    adata: AnnData = None,
+    ligand: str = None,
+    receptor: str = None,
+    groupby:  str = None,
+    lr_sep: str = V.lr_sep,
     clip: bool = True,
     filter_min_mean: float | None = None,
     title: str | None = None,
     xlabel: str = "Receiver cell type",
     ylabel: str = "Sender cell type",
-    cmap: str = "mako_r",
-    figsize: tuple[float, float] = (10, 8),
+    cmap: str = V.cmap,
+    figure_size: tuple = (5, 5),
+    filter_fun: callable = None,
     **kwargs: Any
 ):
     """
-    Generates a heatmap of ligand-receptor (LR) interaction strengths.
+    Heatmap of ligand-receptor (LR) interaction by source and target cell types
 
-    The heatmap visualizes the mean LR interaction signal from each 'sender'
-    cell type to each 'receiver' cell type, based on the `lrdata` object.
+    Parameters
+    ----------
+    %(adata)s
+    ligand : str
+        Name of the ligand gene.
+    receptor : str
+        Name of the receptor gene.
+    %(groupby)s
+    lr_sep: str
+            Separator to use for interaction names.
+    clip : bool
+        Whether to clip the color scale to the 5th and 95th percentiles.
+    filter_min_mean : float | None, optional
+        Minimum mean value across rows/columns to retain them in the heatmap. If None, no filtering is applied. Defaults to None.
+    
+    title : str | None, optional
+        Title of the heatmap. If None, a default title is used. Defaults to None.
+    xlabel : str, optional
+        Label for the x-axis. Defaults to "Receiver cell type".
+    ylabel : str, optional
+        Label for the y-axis. Defaults to "Sender cell type".
 
-    :param ligand: Name of the ligand (e.g., "COL1A1").
-    :param receptor: Name of the receptor (e.g., "DDR1").
-    :param lrdata: AnnData object; output from inflow function.
-    :param groupby: Key in `lrdata.obs` to use for defining 'receiver' cell types.
-    :param sep: Separator used in `.var_names` to delineate sender, ligand, and receptor.
-                Defaults to "^".
-    :param clip: If True, clips the heatmap values to the [5th, 95th] percentiles
-                 to stabilize the color scale. Defaults to True.
-    :param filter_min_mean: Minimum mean LR signal required for a sender or receiver
-                            cell type to be included in the heatmap. Groups below
-                            this threshold are filtered out. Defaults to None (no filtering).
-    :param title: Custom title for the plot. If None, a default title is generated.
-    :param xlabel: Label for the x-axis (receiver cell types).
-    :param ylabel: Label for the y-axis (sender cell types).
-    :param cmap: Matplotlib colormap name for the heatmap. Defaults to "mako_r".
-    :param figsize: Tuple defining the figure size (width, height) in inches.
-    :param kwargs: Additional keyword arguments passed to `seaborn.heatmap`.
+    %(filter_fun)s
+    %(cmap)s
+    %(figure_size)s
 
-    :raises ValueError: If the LR pair is not found, the `groupby` key is missing,
-                        or the heatmap is empty after filtering.
+    Returns
+    -------
+        pd.DataFrame
+            The processed heatmap data used for plotting.
+
+        A `plotnine.ggplot` instance
     """
-    # 1. Input Validation and Data Subsetting
-    if not isinstance(lrdata, AnnData):
-        raise TypeError("lrdata must be an AnnData object.")
-    if groupby not in lrdata.obs.columns:
-        raise ValueError(f"'{groupby}' not found in lrdata.obs. Available columns are: {list(lrdata.obs.columns)}")
 
-    pair = f"{ligand}{sep}{receptor}"
-    mask = lrdata.var_names.str.endswith(pair)
+    # 1. Input Validation and Data Subsetting
+    
+    if not isinstance(adata, AnnData):
+        raise TypeError("adata must be an AnnData object.")
+    
+    if groupby not in adata.obs.columns:
+        raise ValueError(f"'{groupby}' not found in adata.obs. Available columns are: {list(adata.obs.columns)}")
+    
+    if ligand is None or receptor is None:
+        raise ValueError("Both 'ligand' and 'receptor' must be specified.")
+    
+    pair = f"{ligand}{lr_sep}{receptor}"
+    mask = adata.var_names.str.endswith(pair)
     if not mask.any():
-        raise ValueError(f"❌ No LR features found for: {pair} (e.g., 'Sender{sep}{pair}'). Check ligand/receptor names or 'sep'.")
+        raise ValueError(f"❌ No LR features found for: {pair} (e.g., 'Sender{lr_sep}{pair}'). Check ligand/receptor names or 'lr_sep'.")
 
     # Use a view or copy for safety and performance
-    sub = lrdata[:, mask].copy()
+    sub = adata[:, mask].copy()
 
-    # 2. Robust Parsing of Variable Names
+    # 2.Parsing of Variable Names
     # Expects format: 'sender^ligand^receptor'
     try:
-        parts = sub.var_names.to_series().str.rsplit(sep, n=2, expand=True)
+        parts = sub.var_names.to_series().str.rsplit(lr_sep, n=2, expand=True)
         if parts.shape[1] != 3:
              # Fallback/Error if the split didn't yield 3 parts
-            raise ValueError(f"Could not parse var_names using separator '{sep}'. Expected format: 'sender{sep}ligand{sep}receptor'.") from None
+            raise ValueError(f"Could not parse var_names using separator '{lr_sep}'. Expected format: 'sender{lr_sep}ligand{lr_sep}receptor'.") from None
 
         parts.columns = ["sender", "ligand", "receptor"]
         # Assign the parsed sender labels to `sub.var`
@@ -89,20 +110,10 @@ def lr_heatmap(
     # The result is (sender rows) x (receiver columns)
     heatmap_df = df.groupby("receiver").mean().T
 
-    # 4. Optional Filtering of Low-Mean Groups
-    if filter_min_mean is not None:
-        try:
-            filter_min_mean = float(filter_min_mean)
-        except ValueError as e:
-            raise TypeError("filter_min_mean must be a number (float or int).") from e
-
-        # Keep groups (rows/cols) where the average signal is above the threshold
-        keep_rows = heatmap_df.mean(axis=1) >= filter_min_mean
-        keep_cols = heatmap_df.mean(axis=0) >= filter_min_mean
-        heatmap_df = heatmap_df.loc[keep_rows, keep_cols]
-
+    if filter_fun is not None:
+        heatmap_df = filter_fun(heatmap_df)
         if heatmap_df.empty:
-            raise ValueError("⚠️ After filtering, the heatmap is empty. Try lowering **filter_min_mean**.")
+            raise ValueError("⚠️ After filter_fun, the heatmap is empty.")
 
     # 5. Ordering for Visual Clarity
     mat = heatmap_df.copy()
@@ -122,10 +133,10 @@ def lr_heatmap(
             vmax = np.nanquantile(valid_data, 0.95)
         else:
             print("Warning: Data is empty or all NaN, skipping clipping.")
-            clip = False # Disable clipping if data is invalid
+            clip = False 
 
     # 7. Plotting
-    plt.figure(figsize=figsize)
+    plt.figure(figsize=figure_size)
 
     # Set default seaborn heatmap aesthetics for a clean look
     default_kwargs = {
@@ -150,8 +161,8 @@ def lr_heatmap(
     plt.xlabel(xlabel, fontsize=12, fontweight='bold')
     plt.ylabel(ylabel, fontsize=12, fontweight='bold')
     plt.title(title or f"Sender→Receiver Average Inflow Score for {ligand}-{receptor}", fontsize=14, fontweight='bold')
-    plt.xticks(rotation=45, ha='right') # Improve readability of receiver names
-    plt.yticks(rotation=0) # Keep sender names horizontal
+    plt.xticks(rotation=45, ha='right')
+    plt.yticks(rotation=0)
     plt.tight_layout()
     plt.show()
 

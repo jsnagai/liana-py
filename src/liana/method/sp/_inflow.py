@@ -207,6 +207,8 @@ class SpatialInflow:
             },
             index=adata.var_names
         ).reset_index().rename(columns={'index': 'gene'})
+        
+        xy_stats.rename(columns={xy_stats.columns[0]: 'gene'}, inplace=True)
 
         # Merge these stats into the resource
         xy_stats = resource.merge(_rename_means(xy_stats, entity=x_name)) \
