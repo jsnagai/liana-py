@@ -29,13 +29,10 @@ def spatial_inflow(
     ---------- 
     %(adata)s
     %(groupby)s
-    spot_size
-        Size of the spots in the scatter plot
     labels
         List of labels to compare
     %(spatial_key)s
     %(interactions)s
-    %(cmap)s
     %(figure_size)s
     normalize
         Whether to normalize expression values for color mapping
