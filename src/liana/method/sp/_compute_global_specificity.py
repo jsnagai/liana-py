@@ -59,7 +59,7 @@ def _run_single_permutation(
 
     return dict(zip(keys.tolist(), values.tolist(), strict=True))
 
-@d.get_sections
+@d.dedent
 def compute_global_specificity(
     adata: AnnData,
     groupby: str,
@@ -74,13 +74,13 @@ def compute_global_specificity(
     Computes global specificity and calculates permutation test p-values.
 
     Args:
-        {adata}
-        {groupby}
+        %(adata)s
+        %(groupby)s
         lr_sep (str, optional): Separator for names. Defaults to `V.lr_sep` ('^').
         complex_sep (str, optional): Separator for splitting complex names. Defaults to "_".
-        {n_perms}
-        {seed}
-        {verbose}
+        %(n_perms)s
+        %(seed)s
+        %(verbose)s
 
     Returns
     -------
