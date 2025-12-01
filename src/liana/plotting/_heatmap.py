@@ -27,8 +27,8 @@ def heatmap(
     adata: anndata.AnnData = None,
     uns_key: str = K.uns_key,
     liana_res: pandas.DataFrame = None,
-    ligand: str = None,
-    receptor: str = None,
+    ligand_complex: str = None, 
+    receptor_complex: str = None, 
     groupby:  str = None,
     pval_annotation: str = None,
     cmap: str = V.cmap,
@@ -44,10 +44,8 @@ def heatmap(
     %(adata)s
     %(uns_key)s
     %(liana_res)s
-    ligand : str
-        Name of the ligand gene.
-    receptor : str
-        Name of the receptor gene.
+    %(ligand_complex)s
+    %(receptor_complex)s
     %(groupby)s
     pval_annotation : str | None, optional
         Type of p-value annotation to display on the heatmap. Options are 'star' for
@@ -62,8 +60,8 @@ def heatmap(
         raise TypeError("adata must be an AnnData object.")
     if groupby not in adata.obs.columns:
         raise ValueError(f"'{groupby}' not found in adata.obs. Available columns are: {list(adata.obs.columns)}")
-    if ligand is None or receptor is None:
-        raise ValueError("Both 'ligand' and 'receptor' must be specified.")
+    if ligand_complex is None or receptor_complex is None:
+        raise ValueError("Both 'ligand_complex' and 'receptor_complex' must be specified.")
     if uns_key not in adata.uns:
         raise ValueError(f"'{uns_key}' not found in adata.uns. Available keys are: {list(adata.uns.keys())}")
     
@@ -76,16 +74,16 @@ def heatmap(
                             liana_res=liana_res,
                             source_labels=source_labels,
                             target_labels=target_labels,
-                            ligand_complex=ligand,
-                            receptor_complex=receptor,
+                            ligand_complex=ligand_complex,
+                            receptor_complex=receptor_complex,
                             uns_key=uns_key)
     
     
     liana_res = _filter_by(liana_res, filter_fun)
     
-    df = liana_res[(liana_res["ligand"] == ligand) & (liana_res["receptor"] == receptor)].copy()
+    df = liana_res[(liana_res["ligand_complex"] == ligand_complex) & (liana_res["receptor_complex"] == receptor_complex)].copy()
     if df.empty:
-         raise ValueError(f"No rows found for ligand={ligand}, receptor={receptor} in liana_res")
+         raise ValueError(f"No rows found for ligand_complex={ligand_complex}, receptor_complex={receptor_complex} in liana_res")
 
 
     if filter_fun is not None:
@@ -93,7 +91,7 @@ def heatmap(
         mask_satisfies_filter = df.apply(filter_fun, axis=1).astype(bool)
         df_satisfy = df[mask_satisfies_filter]
         if df_satisfy.empty:
-            raise ValueError(f"No interactions found for ligand={ligand}, receptor={receptor} after filter_fun is applied.")
+            raise ValueError(f"No interactions found for ligand_complex={ligand_complex}, receptor_complex={receptor_complex} after filter_fun is applied.")
 
         # 2. Collect the 'source' and 'target' labels that satisfied the filter
         # Keep all rows where the source AND the target has at least one filtered interaction
@@ -105,9 +103,9 @@ def heatmap(
         df = df[rows_to_keep_mask]
         if df.empty:
             # This should technically not be hit if df_satisfy wasn't empty, but kept for robustness
-            raise ValueError(f"No interactions found for ligand={ligand}, receptor={receptor} after groupby-level filtering.")
+            raise ValueError(f"No interactions found for ligand_complex={ligand_complex}, receptor_complex={receptor_complex} after groupby-level filtering.")
 
-    heatmap_df = df.pivot(index="source", columns="target", values="lr_mean")
+    heatmap_df = df.pivot(index="source", columns="target", values="specificity_rank")
 
     # convert p-values to stars
     def p_to_star(p):
@@ -133,7 +131,7 @@ def heatmap(
         annot=pval_m,
         fmt="s",
         cmap=cmap,
-        cbar_kws={"label": "lr_mean"},
+        cbar_kws={"label": "specificity_rank"},
         linewidths=0.5,
         linecolor="gray"
     )

@@ -14,7 +14,7 @@ def _split_complex(name: str, complex_sep: str = V.complex_sep):
     """Helper for splitting complex names."""
     toks = name.split(complex_sep)
     if len(toks) > 1:
-        return toks[0], complex_sep.join(toks[1:])
+        return toks[0], name          
     else:
         return name, name
 
@@ -84,7 +84,7 @@ def compute_global_specificity(
 
     Returns
     -------
-        None: The result with 'lr_mean' and 'pval' is stored in `adata.uns["global_interactions"]`.
+        None: The result with 'specificity_rank' and 'pval' is stored in `adata.uns["global_interactions"]`.
     """
     if groupby not in adata.obs.columns:
         raise KeyError(
@@ -140,22 +140,23 @@ def compute_global_specificity(
     # Build observed df
     parts = [n.split(lr_sep) for n in full_names.tolist()]
     df = pd.DataFrame(parts, columns=["source", "ligand", "receptor", "target"])
-    df["lr_mean"] = values
+    df["specificity_rank"] = values
     df["pval"] = np.nan
 
     # Complex parsing
-    lig_primary, lig_complex = zip(*df["ligand"].map(lambda x: _split_complex(x, complex_sep)), strict=True)
-    rec_primary, rec_complex = zip(*df["receptor"].map(lambda x: _split_complex(x, complex_sep)), strict=True)
+    lig_primary, lig_complex = zip(*df["ligand"].map(lambda x: _split_complex(x, complex_sep)))
+    rec_primary, rec_complex = zip(*df["receptor"].map(lambda x: _split_complex(x, complex_sep)))
     df["ligand"] = lig_primary
     df["ligand_complex"] = lig_complex
     df["receptor"] = rec_primary
     df["receptor_complex"] = rec_complex
 
+
     observed_df = df.copy()
 
     # Prepare for permutation test
     interaction_keys_for_init = full_names.tolist()
-    observed_score_map = dict(zip(interaction_keys_for_init, observed_df["lr_mean"].values, strict=True))
+    observed_score_map = dict(zip(interaction_keys_for_init, observed_df["specificity_rank"].values, strict=True))
     perm_matrix = {key: [] for key in interaction_keys_for_init}
 
     # --- Part B: Permutation test ---
@@ -199,7 +200,7 @@ def compute_global_specificity(
     observed_df["pval"] = pvals
     observed_df = observed_df[[
         "ligand", "ligand_complex", "receptor", "receptor_complex",
-        "source", "target", "lr_mean", "pval"
+        "source", "target", "specificity_rank", "pval"
     ]]
 
     # Save result
