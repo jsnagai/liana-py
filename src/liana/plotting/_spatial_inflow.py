@@ -57,28 +57,22 @@ def spatial_inflow(
     # Prepare data
     coords = adata.obsm[spatial_key]
     cell_type_data = []
-    
+
     for label in labels:
-        mask = adata.obs[groupby].eq(label)
-        if not mask.any():
-            _logg(f"No valid label found for {label}", stacklevel=2)
+        mask=adata.obs[groupby] == label
+        if not numpy.any(mask):
+            _logg.warning(f"No cells found for label '{label}' in groupby '{groupby}'")
             continue
-
-        coords_type = coords[mask.values, :]
-
-        if interactions in adata.var_names:
-            expr_type = adata[mask][:, interactions].X.toarray().ravel()
-        else:
-            _logg(f"'{interactions}' not found in adata.var_names. Skipping {label}.", stacklevel=2)
-            continue
+        adata_sub = adata[mask, :]
+        expr = adata_sub[:, interactions].X.toarray().ravel()
 
         cell_type_data.append({
             'label': label,
-            'coords': coords_type,
-            'expression': expr_type.copy(),
-            'count': (expr_type > 0).sum()
+            'coords': coords[mask.values],
+            'expression': expr,
+            'count': (expr > 0).sum()
         })
-
+            
     # Normalize and scale expression data
     for data in cell_type_data:
         expr = data['expression']
@@ -94,7 +88,7 @@ def spatial_inflow(
 
         # Normalize to 0-1 
         if normalize:
-            if scale_max - scale_min > 0:
+            if scale_max > scale_min:
                 expr = (expr - scale_min) / (scale_max - scale_min)
             else:
                 expr = numpy.zeros_like(expr)
@@ -114,6 +108,7 @@ def spatial_inflow(
             label=data['label'], alpha=0.8,
             rasterized=True,
         )
+        sc.set_clim(0, 1)
         scatter_objects.append(sc)
 
     n_bars = len(scatter_objects)
