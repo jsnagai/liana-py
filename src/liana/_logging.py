@@ -26,7 +26,9 @@ def _logg(message: str, level: str | None = 'info', verbose: bool = False):
             logging.info(message)
 
 
-def _check_if_installed(package_name: str, custom_error_message: str = None) -> ModuleType:
+def _check_if_installed(package_name: str,
+                        custom_error_message: str = None
+                        ) -> ModuleType:
     """
     Checks whether a package is installed in the current environment.
 
@@ -54,4 +56,7 @@ def _check_if_installed(package_name: str, custom_error_message: str = None) -> 
         if custom_error_message:
             raise ImportError(custom_error_message) from None
         else:
-            raise ImportError(f'{package_name} is not installed. Please install it with: pip install {package_name}') from None
+            raise ImportError(
+                    f'{package_name} is not installed. Please install it with: \
+                    pip install {package_name}'
+                ) from None
