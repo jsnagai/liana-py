@@ -100,3 +100,17 @@ def test_heatmap():
         ligand_complex=liana_res["ligand_complex"].iloc[0],
         receptor_complex=liana_res["receptor_complex"].iloc[0]
     )
+
+def test_spatial_inflow():
+    from liana.plotting import spatial_inflow
+    from liana.testing._sample_anndata import generate_toy_mdata, generate_toy_spatial
+    adata = generate_toy_spatial()
+    spatial_inflow(
+        adata=adata,
+        groupby='bulk_labels',
+        labels=['Dendritic', 'CD56+ NK'],
+        interactions='HES4',
+        normalize=True,
+        percentile_scaling=(5, 95),
+        show_counts=True
+    )
