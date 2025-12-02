@@ -321,9 +321,10 @@ class SpatialInflow:
         var = mean_sq - mean**2
         std = np.sqrt(var)
         cv = std / (mean + 1e-12) 
+        
         gini_vals = []
         for j in range(X.shape[1]):
-            col = X[:, j].toarray().ravel()   # extract dense 1D array
+            col = X[:, j].toarray().ravel() 
             gini_vals.append(gini_dense(col))
         
 

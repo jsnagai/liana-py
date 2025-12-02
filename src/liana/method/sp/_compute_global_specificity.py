@@ -94,6 +94,7 @@ def compute_global_specificity(
 
     rng_main = np.random.default_rng(seed)
     original_groupby_labels = adata.obs[groupby].copy()
+    
     # --- Part A: Observed score (sparse) ---
 
     # Fixed column order for cell types

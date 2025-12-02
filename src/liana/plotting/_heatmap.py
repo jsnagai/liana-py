@@ -60,6 +60,8 @@ def heatmap(
     pval_annotation : str | None, optional
         Type of p-value annotation to display on the heatmap. Options are 'star' for
         asterisks, 'number' for numerical values, and 'none' for no annotation. Defaults to None.
+    values_key : str, optional
+        Key in the liana_res DataFrame to use for heatmap values. Defaults to "lr_mean".
     %(cmap)s
     %(filter_fun)s
     %(figure_size)s
@@ -115,19 +117,20 @@ def heatmap(
             # This should technically not be hit if df_satisfy wasn't empty, but kept for robustness
             raise ValueError(f"No interactions found for ligand_complex={ligand_complex}, receptor_complex={receptor_complex} after groupby-level filtering.")
 
-    heatmap_df = df.pivot(index="source", columns="target", values="specificity_rank")
+    heatmap_df = df.pivot(index="source", columns="target", values=values_key)
 
 
-    # pval annotation 
-    if pval_annotation is None or pval_annotation == "none":
-        df["annot"] = ""
-    elif pval_annotation == "star":
-        df["annot"] = df["pval"].apply(p_to_star)
-    elif pval_annotation == "number":
-        df["annot"] = df["pval"].apply(lambda x: f"{x:.3g}")
-
-    pval_m = df.pivot(index="source", columns="target", values="annot")
-
+    # pval annotation
+    if pval_annotation is not None and "pvals" in df.columns:
+        pval_m = df.pivot(index="source", columns="target", values="pvals")
+        if pval_annotation == "star":
+            pval_m = pval_m.applymap(p_to_star)
+        elif pval_annotation == "number":
+            pval_m = pval_m.round(3).astype(str)
+        else:
+            raise ValueError("pval_annotation must be one of 'star', 'number', or None.")
+    else:
+        pval_m = None
 
     plt.figure(figsize=figure_size)
     sns.heatmap(
@@ -135,7 +138,7 @@ def heatmap(
         annot=pval_m,
         fmt="s",
         cmap=cmap,
-        cbar_kws={"label": "specificity_rank"},
+        cbar_kws={"label": values_key},
         linewidths=0.5,
         linecolor="gray",
         **kwargs

@@ -24,7 +24,7 @@ def feature_by_group(
 ):
 
     """
-    Plot inflow scores for single interaction across spatial coordinates.
+    Plot inflow scores for single feature across spatial coordinates.
 
     Parameters
     ---------- 

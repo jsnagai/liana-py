@@ -41,19 +41,18 @@ def test_compute_global_specificity_basic():
     # Expected columns order
     expected_cols = [
         "ligand", "ligand_complex", "receptor", "receptor_complex",
-        "source", "target", "specificity_rank", "pval"
+        "source", "target", "lr_mean", "pval"
     ]
     assert list(df.columns) == expected_cols
 
     # There are 2 interactions * 2 cell types = 4 rows
     assert df.shape[0] == 4
 
-    # Specificity ranks should equal the group-wise means:
+    # lr_mean should equal the group-wise means:
     # For group A (cells 0,1): interaction1 -> (1+3)/2=2, interaction2 -> (2+4)/2=3
     # For group B (cells 2,3): interaction1 -> (5+7)/2=6, interaction2 -> (6+8)/2=7
-    expected_specificity = [2.0, 3.0, 6.0, 7.0]
-    assert_allclose(df["specificity_rank"].values.astype(float), expected_specificity)
-
+    expected_lr_mean = [2.0, 3.0, 6.0, 7.0]
+    assert_allclose(df["lr_mean"].values.astype(float), expected_lr_mean)
     # p-values must be between 0 and 1
     pvals = df["pval"].values.astype(float)
     assert np.all(pvals >= 0.0) and np.all(pvals <= 1.0)

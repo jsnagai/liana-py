@@ -97,19 +97,20 @@ def test_heatmap():
         adata=adata,
         groupby="random",
         liana_res=liana_res,
+        values_key="specificity_rank",
         ligand_complex=liana_res["ligand_complex"].iloc[0],
         receptor_complex=liana_res["receptor_complex"].iloc[0]
     )
 
-def test_spatial_inflow():
-    from liana.plotting import spatial_inflow
+def test_feature_by_group():
+    from liana.plotting import feature_by_group
     from liana.testing._sample_anndata import generate_toy_mdata, generate_toy_spatial
     adata = generate_toy_spatial()
-    spatial_inflow(
+    feature_by_group(
         adata=adata,
         groupby='bulk_labels',
         labels=['Dendritic', 'CD56+ NK'],
-        interactions='HES4',
+        feature='HES4',
         normalize=True,
         percentile_scaling=(5, 95),
         show_counts=True
