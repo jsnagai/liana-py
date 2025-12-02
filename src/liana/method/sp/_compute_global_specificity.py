@@ -84,7 +84,7 @@ def compute_global_specificity(
 
     Returns
     -------
-        None: The result with 'specificity_rank' and 'pval' is stored in `adata.uns["global_interactions"]`.
+        None: The result with 'lr_mean' and 'pval' is stored in `adata.uns["global_interactions"]`.
     """
     if groupby not in adata.obs.columns:
         raise KeyError(
@@ -140,7 +140,7 @@ def compute_global_specificity(
     # Build observed df
     parts = [n.split(lr_sep) for n in full_names.tolist()]
     df = pd.DataFrame(parts, columns=["source", "ligand", "receptor", "target"])
-    df["specificity_rank"] = values
+    df["lr_mean"] = values
     df["pval"] = np.nan
 
     # Complex parsing
@@ -156,7 +156,7 @@ def compute_global_specificity(
 
     # Prepare for permutation test
     interaction_keys_for_init = full_names.tolist()
-    observed_score_map = dict(zip(interaction_keys_for_init, observed_df["specificity_rank"].values, strict=True))
+    observed_score_map = dict(zip(interaction_keys_for_init, observed_df["lr_mean"].values, strict=True))
     perm_matrix = {key: [] for key in interaction_keys_for_init}
 
     # --- Part B: Permutation test ---
@@ -200,7 +200,7 @@ def compute_global_specificity(
     observed_df["pval"] = pvals
     observed_df = observed_df[[
         "ligand", "ligand_complex", "receptor", "receptor_complex",
-        "source", "target", "specificity_rank", "pval"
+        "source", "target", "lr_mean", "pval"
     ]]
 
     # Save result

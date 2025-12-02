@@ -3,5 +3,5 @@ from ._dotplot import dotplot, dotplot_by_sample
 from ._misty_plots import target_metrics, contributions, interactions
 from ._tileplot import tileplot
 from ._circle_plot import circle_plot
-from ._spatial_inflow import spatial_inflow
+from ._feature_by_group import feature_by_group
 from ._heatmap import heatmap

@@ -22,6 +22,14 @@ from liana._constants import Keys as K
 from liana._docs import d
 from liana.plotting._common import _check_var, _filter_by, _get_top_n, _invert_scores, _prep_liana_res
 
+
+# convert p-values to stars
+def p_to_star(p):
+    if p < 0.001: return "***"
+    if p < 0.01:  return "**"
+    if p < 0.05:  return "*"
+    return ""
+
 @d.dedent
 def heatmap(
     adata: anndata.AnnData = None,
@@ -31,9 +39,11 @@ def heatmap(
     receptor_complex: str = None, 
     groupby:  str = None,
     pval_annotation: str = None,
+    values_key: str = "lr_mean",
     cmap: str = V.cmap,
     figure_size: tuple = (10, 10),
     filter_fun: callable = None,
+    **kwargs
 ):
     
     """
@@ -107,12 +117,6 @@ def heatmap(
 
     heatmap_df = df.pivot(index="source", columns="target", values="specificity_rank")
 
-    # convert p-values to stars
-    def p_to_star(p):
-        if p < 0.001: return "***"
-        if p < 0.01:  return "**"
-        if p < 0.05:  return "*"
-        return ""
 
     # pval annotation 
     if pval_annotation is None or pval_annotation == "none":
@@ -133,7 +137,8 @@ def heatmap(
         cmap=cmap,
         cbar_kws={"label": "specificity_rank"},
         linewidths=0.5,
-        linecolor="gray"
+        linecolor="gray",
+        **kwargs
     )
 
     plt.title(df["interaction"].iloc[0])

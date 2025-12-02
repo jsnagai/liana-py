@@ -10,16 +10,17 @@ from liana._docs import d
 from liana._logging import _logg
 
 @d.dedent
-def spatial_inflow(
+def feature_by_group(
     adata: anndata.AnnData = None,
     groupby: str = None,
     spatial_key = K.spatial_key,
     labels: list[str] = None, 
-    interactions = K.interactions,
+    feature: str = None,
     figure_size: tuple = (10, 6),
     normalize: bool = True,
     percentile_scaling: tuple[int, int] | None = None, 
     show_counts: bool = True,
+    **kwargs
 ):
 
     """
@@ -29,22 +30,23 @@ def spatial_inflow(
     ---------- 
     %(adata)s
     %(groupby)s
-    labels
-        List of labels to compare
     %(spatial_key)s
-    %(interactions)s
+    labels
+        List of labels to compare, from groupby.
+    feature
+        From adata.var_names.
     %(figure_size)s
     normalize
-        Whether to normalize expression values for color mapping
+        Normalize expression values between 0 and 1 for each cell type.
     percentile_scaling
-        Tuple specifying percentiles for scaling color mapping
+        Tuple specifying percentiles for scaling.
     show_counts
-        Whether to display counts of cells per label.
+        Show counts of expression cells (expression > 0).
     """
 
     # Validate inputs
     if not labels:
-        raise ValueError("labels must contain at least one label")
+        raise ValueError(f"'{labels}' must contain at least one label from '{groupby}'")
     if spatial_key not in adata.obsm:
         raise KeyError(f"'{spatial_key}' not found in adata.obsm")
 
@@ -64,7 +66,7 @@ def spatial_inflow(
             _logg.warning(f"No cells found for label '{label}' in groupby '{groupby}'")
             continue
         adata_sub = adata[mask, :]
-        expr = adata_sub[:, interactions].X.toarray().ravel()
+        expr = adata_sub[:, feature].X.toarray().ravel()
 
         cell_type_data.append({
             'label': label,
@@ -128,7 +130,7 @@ def spatial_inflow(
 
         cb.ax.tick_params(labelsize=8)
 
-    title_text = f"{interactions} inflow"
+    title_text = f"{feature}"
     ax.set_title(title_text, fontsize=14, pad=10)
     
     return fig, ax

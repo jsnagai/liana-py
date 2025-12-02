@@ -25,6 +25,13 @@ from liana.method.sp._utils import (
 )
 from liana.resource.select_resource import _handle_resource
 
+def gini_dense(x):
+    if np.all(x == 0):
+        return 0.0
+    x = np.sort(x)
+    n = len(x)
+    return (2*np.sum((np.arange(1, n+1)) * x) / (n*np.sum(x))) - (n+1)/n
+
 
 class SpatialInflow:
     """A class for computing trivariate (source&ligand->receptor) global and spatial spatial metrics."""
@@ -307,6 +314,25 @@ class SpatialInflow:
         # Drop non-variable features
         _, var = mean_variance_axis(lrdata.X, axis=0)
         lrdata = lrdata[:, var > 0]
+
+        X = lrdata.X.astype(float)
+        mean = np.asarray(X.mean(axis=0)).ravel()
+        mean_sq = np.asarray(X.power(2).mean(axis=0)).ravel()
+        var = mean_sq - mean**2
+        std = np.sqrt(var)
+        cv = std / (mean + 1e-12) 
+        gini_vals = []
+        for j in range(X.shape[1]):
+            col = X[:, j].toarray().ravel()   # extract dense 1D array
+            gini_vals.append(gini_dense(col))
+        
+
+        lrdata.var["gini"] = gini_vals
+        lrdata.var["mean"] = mean
+        lrdata.var["variance"] = var
+        lrdata.var["std"] = std
+        lrdata.var["cv"] = cv
+        lrdata.var["nonzero_fraction"] = (lrdata.X.astype(bool).sum(axis=0) / lrdata.n_obs).A1
 
         return lrdata
 
