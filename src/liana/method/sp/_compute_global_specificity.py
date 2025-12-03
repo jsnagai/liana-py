@@ -8,15 +8,8 @@ from tqdm import trange, tqdm
 from liana._constants import DefaultValues as V
 from liana._logging import _logg
 from liana._docs import d
+from liana.method._pipe_utils._pre import _choose_mtx_rep
 
-
-def _split_complex(name: str, complex_sep: str = V.complex_sep):
-    """Helper for splitting complex names."""
-    toks = name.split(complex_sep)
-    if len(toks) > 1:
-        return toks[0], name          
-    else:
-        return name, name
 
 def _run_single_permutation(
     shuffled_labels: np.ndarray,
@@ -64,11 +57,13 @@ def compute_global_specificity(
     adata: AnnData,
     groupby: str,
     lr_sep: str = V.lr_sep,
-    complex_sep: str = V.complex_sep,
     n_perms: int = V.n_perms,
     seed: int = V.seed,
     n_jobs: int = -1,
     verbose: bool = V.verbose,
+    use_raw: bool = V.use_raw,
+    layer: (str or None)=V.layer,
+    uns_key: str = "global_interactions",
 ) -> None:
     """
     Computes global specificity and calculates permutation test p-values.
@@ -76,11 +71,14 @@ def compute_global_specificity(
     Args:
         %(adata)s
         %(groupby)s
-        lr_sep (str, optional): Separator for names. Defaults to `V.lr_sep` ('^').
-        complex_sep (str, optional): Separator for splitting complex names. Defaults to "_".
+        %(lr_sep)s
         %(n_perms)s
         %(seed)s
+        n_jobs (int, optional): Number of parallel jobs. Defaults to -1 (all available cores).
         %(verbose)s
+        %(use_raw)s
+        %(layer)s
+        %(uns_key)s
 
     Returns
     -------
@@ -119,8 +117,7 @@ def compute_global_specificity(
     t_sparse = t_sparse @ diags(1.0 / col_sums)
 
     # Ensure X is sparse CSR
-    X_raw = adata.X
-    X = X_raw if issparse(X_raw) else csr_matrix(X_raw)
+    X = _choose_mtx_rep(adata, layer=layer, use_raw=use_raw)
 
     # Aggregation
     result = t_sparse.T @ X
@@ -140,25 +137,13 @@ def compute_global_specificity(
 
     # Build observed df
     parts = [n.split(lr_sep) for n in full_names.tolist()]
-    df = pd.DataFrame(parts, columns=["source", "ligand", "receptor", "target"])
+    df = pd.DataFrame(parts, columns=["source", "ligand_complex", "receptor_complex", "target"])
     df["lr_mean"] = values
     df["pval"] = np.nan
-
-    # Complex parsing
-    lig_primary, lig_complex = zip(*df["ligand"].map(lambda x: _split_complex(x, complex_sep)))
-    rec_primary, rec_complex = zip(*df["receptor"].map(lambda x: _split_complex(x, complex_sep)))
-    df["ligand"] = lig_primary
-    df["ligand_complex"] = lig_complex
-    df["receptor"] = rec_primary
-    df["receptor_complex"] = rec_complex
-
-
     observed_df = df.copy()
 
     # Prepare for permutation test
-    interaction_keys_for_init = full_names.tolist()
-    observed_score_map = dict(zip(interaction_keys_for_init, observed_df["lr_mean"].values, strict=True))
-    perm_matrix = {key: [] for key in interaction_keys_for_init}
+    keys = full_names.tolist()
 
     # --- Part B: Permutation test ---
 
@@ -175,34 +160,29 @@ def compute_global_specificity(
 
     # Run in parallel
     permuted_scores_list = Parallel(n_jobs=n_jobs, verbose=joblib_verbose)(
-        delayed(_run_single_permutation)(
-            shuffled_labels=shuffled_labels,
-            X=X,
-            interaction_names=interaction_names,
-            celltype_names=celltype_names,
-            lr_sep=lr_sep,
-        ) for shuffled_labels in tqdm(permuted_labels_list, desc="Running permutations")
-    )
+            delayed(_run_single_permutation)(
+                shuffled_labels=shuffled_labels,
+                X=X,
+                interaction_names=interaction_names,
+                celltype_names=celltype_names,
+                lr_sep=lr_sep,
+            ) for shuffled_labels in tqdm(permuted_labels_list, desc="Running permutations")
+        )
 
-    # Aggregate
-    for scores_dict in permuted_scores_list:
-        for key, score in scores_dict.items():
-            perm_matrix[key].append(score)
+    perm_df = pd.DataFrame(permuted_scores_list)
+    perm_scores_matrix = perm_df[keys].values
+    observed_scores = observed_df["lr_mean"].values
+    n_greater_equal = (perm_scores_matrix >= observed_scores[None, :]).sum(axis=0)
 
     # Compute p-values
     n = float(n_perms + 1)
-    pvals = []
-    for key in interaction_keys_for_init:
-        real_score = observed_score_map.get(key)
-        perm_scores = np.asarray(perm_matrix[key], dtype=np.float64)
-        pval = (np.sum(perm_scores >= real_score) + 1.0) / n
-        pvals.append(pval)
+    pvals = (n_greater_equal + 1.0) / n
 
     observed_df["pval"] = pvals
     observed_df = observed_df[[
-        "ligand", "ligand_complex", "receptor", "receptor_complex",
+        "ligand_complex", "receptor_complex",
         "source", "target", "lr_mean", "pval"
     ]]
 
     # Save result
-    adata.uns["global_interactions"] = observed_df
+    adata.uns[uns_key] = observed_df
