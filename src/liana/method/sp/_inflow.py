@@ -25,13 +25,14 @@ from liana.method.sp._utils import (
 )
 from liana.resource.select_resource import _handle_resource
 
-
-def gini_dense(x):
-    if np.all(x == 0):
+def compute_gini(data, n_rows):
+    if len(data) == 0:
         return 0.0
-    x = np.sort(x)
-    n = len(x)
-    return (2*np.sum((np.arange(1, n+1)) * x) / (n*np.sum(x))) - (n+1)/n
+    x = np.sort(data)
+    n0 = n_rows - len(x)
+    n = n_rows
+    idx = np.arange(n0 + 1, n + 1)
+    return (2 * np.sum(idx * x) / (n * np.sum(x))) - (n + 1) / n
 
 
 class SpatialInflow:
@@ -320,19 +321,23 @@ class SpatialInflow:
         var = mean_sq - mean**2
         std = np.sqrt(var)
         cv = std / (mean + 1e-12)
-
+        
+        #gini
+        Xc = X.tocsc()
+        n_rows = Xc.shape[0]
         gini_vals = []
-        for j in range(X.shape[1]):
-            col = X[:, j].toarray().ravel()
-            gini_vals.append(gini_dense(col))
-
-
+        for j in range(Xc.shape[1]):
+            start, end = Xc.indptr[j], Xc.indptr[j+1]
+            col_data = Xc.data[start:end]     
+            gini_vals.append(compute_gini(col_data, n_rows))
+        
         lrdata.var["gini"] = gini_vals
         lrdata.var["mean"] = mean
         lrdata.var["variance"] = var
         lrdata.var["std"] = std
         lrdata.var["cv"] = cv
         lrdata.var["nonzero_fraction"] = (lrdata.X.astype(bool).sum(axis=0) / lrdata.n_obs).A1
+
 
         return lrdata
 
