@@ -202,6 +202,8 @@ def liana_pipe(adata: anndata.AnnData,
             verbose=verbose,
             **spatial_kwargs
         )
+        # Set interacting to 0 where not interacting
+        proximity_df['proximity'] = proximity_df['proximity'] * proximity_df['interacting']
 
         lr_res = lr_res.merge(
             proximity_df[['source', 'target', 'proximity']],
