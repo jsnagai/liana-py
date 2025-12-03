@@ -113,28 +113,62 @@ def _get_mat_idx(adata, lr_res):
 
 
 
-def _calculate_pvals(lr_truth, perm_stats, _score_fun):
+def _calculate_pvals(lr_truth, perm_stats, _score_fun, proximity_weights=None):
     """
     Calculate p-values for a given DataFrame x and permutation statistics
 
     Parameters
     ----------
-    x
-        DataFrame with LIANA results
+    lr_truth
+        Observed LR scores, shape (n_interactions,)
     perm_stats
-        Permutation statistics (2 (ligand-receptor), n_perms (number of permutations, n_rows in lr_res)
+        Permutation statistics, shape (2, n_perms, n_interactions)
+    _score_fun
+        Function to combine ligand and receptor statistics
+    proximity_weights
+        Optional spatial proximity weights, shape (n_interactions,)
 
     Returns
     -------
-    A tuple with lr_mean and pvalue for x
+    P-values for the observed scores
 
     """
     # calculate p-values
     if perm_stats is not None:
         lr_perm_means = _score_fun(perm_stats, axis=0)
+
+        # Apply proximity weights to both observed and permuted if provided
+        if proximity_weights is not None:
+            # Weight permuted: (n_perms, n_interactions) * (n_interactions,)
+            # Broadcasting automatically handles dimension alignment
+            lr_perm_means = lr_perm_means * proximity_weights
+
         n_perms = perm_stats.shape[1]
         pvals = np.sum(np.greater_equal(lr_perm_means, lr_truth), axis=0) / n_perms
     else:
         pvals = None
 
     return pvals
+
+
+def _apply_proximity_weights(observed_scores, x):
+    """
+    Extract proximity weights from DataFrame and apply to observed scores.
+
+    Parameters
+    ----------
+    observed_scores
+        Observed interaction scores, shape (n_interactions,)
+    x
+        DataFrame with LIANA results, may contain 'proximity' column
+
+    Returns
+    -------
+    Tuple of (weighted_scores, proximity_weights)
+        - weighted_scores: observed scores multiplied by proximity if present, otherwise unchanged
+        - proximity_weights: array of weights or None if not present
+    """
+    proximity_weights = x['proximity'].values if 'proximity' in x.columns else None
+    if proximity_weights is not None:
+        observed_scores = observed_scores * proximity_weights
+    return observed_scores, proximity_weights
