@@ -1,6 +1,7 @@
 import numpy as np
+from requests import patch
 
-from liana.plotting import dotplot, dotplot_by_sample, tileplot
+from liana.plotting import dotplot, dotplot_by_sample, tileplot, heatmap
 from liana.testing import generate_toy_spatial, sample_lrs
 
 liana_res = sample_lrs()
@@ -74,7 +75,6 @@ def test_proximity_plot():
 
 def test_circle_plot():
     from scanpy.datasets import pbmc68k_reduced
-
     from liana.plotting import circle_plot
     adata = pbmc68k_reduced()
     unique_sources = np.unique(liana_res['source'])
@@ -85,3 +85,33 @@ def test_circle_plot():
                 pivot_mode='mean', score_key='specificity_rank')
     circle_plot(adata, groupby='random', liana_res=liana_res, pivot_mode='counts',
                 filter_fun=lambda x: x['specificity_rank'] < 0.95)
+
+def test_heatmap():
+    from scanpy.datasets import pbmc68k_reduced
+    from liana.plotting import heatmap
+    adata = pbmc68k_reduced()
+    unique_sources = np.unique(liana_res['source'])
+    adata.obs['random'] = np.random.choice(unique_sources, size=adata.shape[0], replace=True)
+    adata.uns['liana_res'] = liana_res
+    heatmap(
+        adata=adata,
+        groupby="random",
+        liana_res=liana_res,
+        values_key="specificity_rank",
+        ligand_complex=liana_res["ligand_complex"].iloc[0],
+        receptor_complex=liana_res["receptor_complex"].iloc[0]
+    )
+
+def test_feature_by_group():
+    from liana.plotting import feature_by_group
+    from liana.testing._sample_anndata import generate_toy_mdata, generate_toy_spatial
+    adata = generate_toy_spatial()
+    feature_by_group(
+        adata=adata,
+        groupby='bulk_labels',
+        labels=['Dendritic', 'CD56+ NK'],
+        feature='HES4',
+        normalize=True,
+        percentile_scaling=(5, 95),
+        show_counts=True
+    )
