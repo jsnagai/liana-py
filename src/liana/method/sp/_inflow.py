@@ -25,15 +25,6 @@ from liana.method.sp._utils import (
 )
 from liana.resource.select_resource import _handle_resource
 
-def compute_gini(data, n_rows):
-    if len(data) == 0:
-        return 0.0
-    x = np.sort(data)
-    n0 = n_rows - len(x)
-    n = n_rows
-    idx = np.arange(n0 + 1, n + 1)
-    return (2 * np.sum(idx * x) / (n * np.sum(x))) - (n + 1) / n
-
 
 class SpatialInflow:
     """A class for computing trivariate (source&ligand->receptor) global and spatial spatial metrics."""
@@ -322,16 +313,6 @@ class SpatialInflow:
         std = np.sqrt(var)
         cv = std / (mean + 1e-12)
         
-        #gini
-        Xc = X.tocsc()
-        n_rows = Xc.shape[0]
-        gini_vals = []
-        for j in range(Xc.shape[1]):
-            start, end = Xc.indptr[j], Xc.indptr[j+1]
-            col_data = Xc.data[start:end]     
-            gini_vals.append(compute_gini(col_data, n_rows))
-        
-        lrdata.var["gini"] = gini_vals
         lrdata.var["mean"] = mean
         lrdata.var["variance"] = var
         lrdata.var["std"] = std
