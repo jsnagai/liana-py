@@ -10,59 +10,33 @@ from liana._logging import _logg
 from liana._docs import d
 from liana.method._pipe_utils._pre import _choose_mtx_rep
 
-
-def _run_single_permutation(
-    shuffled_labels: np.ndarray,
-    X,
-    celltype_names: list,
-    interaction_names: np.ndarray,
-    lr_sep: str = V.lr_sep,
-) -> dict:
-    """Run a single permutation using precomputed shuffled labels."""
-    cats = pd.Categorical(shuffled_labels, categories=celltype_names, ordered=False)
-    col_idx = cats.codes
-
-    n_cells = col_idx.size
-    n_types = len(celltype_names)
-    row_idx = np.arange(n_cells)
-
-    # Build sparse one-hot and normalize columns
-    t_sparse = csr_matrix(
-        (np.ones(n_cells, dtype=np.float64), (row_idx, col_idx)),
-        shape=(n_cells, n_types)
-    )
+#Function to compute group means
+def get_group_mean(X, groupby_labels, var_names, groups_order=None):
+    s = pd.Series(groupby_labels)
+    groups_dum = pd.get_dummies(s, dummy_na=False)
+    if groups_order is not None:
+        groups_dum = groups_dum.reindex(columns=groups_order, fill_value=0)
+    t_sparse = csr_matrix(groups_dum)
     col_sums = np.asarray(t_sparse.sum(axis=0)).ravel()
     col_sums[col_sums == 0] = 1.0
     t_sparse = t_sparse @ diags(1.0 / col_sums)
-
-    # Ensure X is sparse CSR
-    X = X if issparse(X) else csr_matrix(X)
-
-    # Aggregation
     result = t_sparse.T @ X
-    values = (result.toarray() if issparse(result) else np.asarray(result)).ravel()
+    arr = result.toarray()
+    df_raw = pd.DataFrame(arr, index=groups_dum.columns, columns=var_names)
+    return df_raw
 
-    # Build keys with vectorized string ops
-    interaction_names_tiled = np.tile(interaction_names.astype(str), n_types)
-    celltype_names_repeated = np.repeat(
-        np.asarray(celltype_names, dtype=str),
-        interaction_names.shape[0]
-    )
-    keys = np.char.add(np.char.add(interaction_names_tiled, lr_sep), celltype_names_repeated)
-
-    return dict(zip(keys.tolist(), values.tolist(), strict=True))
 
 @d.dedent
 def compute_global_specificity(
     adata: AnnData,
     groupby: str,
-    lr_sep: str = V.lr_sep,
+    lr_sep: str | None = V.lr_sep,
     n_perms: int = V.n_perms,
     seed: int = V.seed,
     n_jobs: int = -1,
     verbose: bool = V.verbose,
     use_raw: bool = V.use_raw,
-    layer: (str or None)=V.layer,
+    layer: str = V.layer,
     uns_key: str = "global_interactions",
 ) -> None:
     """
@@ -85,104 +59,55 @@ def compute_global_specificity(
         None: The result with 'lr_mean' and 'pval' is stored in `adata.uns["global_interactions"]`.
     """
     if groupby not in adata.obs.columns:
-        raise KeyError(
-            f"`groupby`='{groupby}' not found in adata.obs. "
-            "Use the same grouping column used to build adata."
-        )
-
-    rng_main = np.random.default_rng(seed)
-    original_groupby_labels = adata.obs[groupby].copy()
+        raise KeyError(f"`groupby`='{groupby}' not found in adata.obs.")
     
-    # --- Part A: Observed score (sparse) ---
-
-    # Fixed column order for cell types
-    celltypes = pd.get_dummies(adata.obs[groupby])
-    celltype_names = list(celltypes.columns)
-
-    # Map original labels to fixed indices
-    cats_obs = pd.Categorical(adata.obs[groupby].values, categories=celltype_names, ordered=False)
-    col_idx_obs = cats_obs.codes
-
-    n_cells = col_idx_obs.size
-    n_types = len(celltype_names)
-    row_idx = np.arange(n_cells)
-
-    # Sparse one-hot and normalize columns
-    t_sparse = csr_matrix(
-        (np.ones(n_cells, dtype=np.float64), (row_idx, col_idx_obs)),
-        shape=(n_cells, n_types)
-    )
-    col_sums = np.asarray(t_sparse.sum(axis=0)).ravel()
-    col_sums[col_sums == 0] = 1.0
-    t_sparse = t_sparse @ diags(1.0 / col_sums)
-
-    # Ensure X is sparse CSR
+    adata.obs[groupby] = adata.obs[groupby].astype('category')
+    rng_main = np.random.default_rng(seed)
+    original_groupby_labels = adata.obs[groupby]
+    groups_order = list(original_groupby_labels.cat.categories)
     X = _choose_mtx_rep(adata, layer=layer, use_raw=use_raw)
+    var_names = adata.var_names
 
-    # Aggregation
-    result = t_sparse.T @ X
-    values = (result.toarray() if issparse(result) else np.asarray(result)).ravel()
-
-    # Names
-    interaction_names = adata.var.index.astype(str).values
-
-    # Build full names "L^R^Source^Target"
-    full_names = np.char.add(
-        np.char.add(
-            np.tile(interaction_names.astype(str), n_types),
-            lr_sep
-        ),
-        np.repeat(np.asarray(celltype_names, dtype=str), interaction_names.shape[0])
-    )
-
-    # Build observed df
-    parts = [n.split(lr_sep) for n in full_names.tolist()]
-    df = pd.DataFrame(parts, columns=["source", "ligand_complex", "receptor_complex", "target"])
-    df["lr_mean"] = values
-    df["pval"] = np.nan
-    observed_df = df.copy()
-
-    # Prepare for permutation test
-    keys = full_names.tolist()
-
-    # --- Part B: Permutation test ---
-
-    # Precompute all permutations
-    permuted_labels_list = [
-        rng_main.permutation(original_groupby_labels.values)
-        for _ in range(n_perms)
-    ]
+    #Compute observed statistic
+    df_obs = get_group_mean(X, original_groupby_labels, var_names, groups_order=groups_order)
+    obs_values = df_obs.values
 
     if verbose:
         _logg(f"Running {n_perms} permutations in parallel...")
 
     joblib_verbose = 5 if verbose else 0
 
-    # Run in parallel
-    permuted_scores_list = Parallel(n_jobs=n_jobs, verbose=joblib_verbose)(
-            delayed(_run_single_permutation)(
-                shuffled_labels=shuffled_labels,
-                X=X,
-                interaction_names=interaction_names,
-                celltype_names=celltype_names,
-                lr_sep=lr_sep,
-            ) for shuffled_labels in tqdm(permuted_labels_list, desc="Running permutations")
-        )
+    #Precompute shuffled labels
+    permuted_labels_list = [
+        rng_main.permutation(original_groupby_labels.values)
+        for _ in range(n_perms)
+    ]
 
-    perm_df = pd.DataFrame(permuted_scores_list)
-    perm_scores_matrix = perm_df[keys].values
-    observed_scores = observed_df["lr_mean"].values
-    n_greater_equal = (perm_scores_matrix >= observed_scores[None, :]).sum(axis=0)
+    perm_stats_list = Parallel(n_jobs=n_jobs, verbose=joblib_verbose)(
+        delayed(get_group_mean)(X, shuffled_labels, var_names, groups_order=groups_order)
+        for shuffled_labels in tqdm(permuted_labels_list, desc="Running permutations"))
 
-    # Compute p-values
-    n = float(n_perms + 1)
-    pvals = (n_greater_equal + 1.0) / n
+    #Convert results to array
+    perm_stats = np.array([df_perm.values for df_perm in perm_stats_list])
 
-    observed_df["pval"] = pvals
-    observed_df = observed_df[[
-        "ligand_complex", "receptor_complex",
-        "source", "target", "lr_mean", "pval"
-    ]]
+    # Compute empirical p-values
+    k = np.sum(np.abs(perm_stats) >= np.abs(obs_values), axis=0)
+    p_values = (k + 1) / (n_perms + 1)
+    pval_df = pd.DataFrame(p_values, index=df_obs.index, columns=df_obs.columns)
+    pval_melted = pval_df.reset_index().melt(id_vars='index', var_name='feature', value_name='pval')
+    
+    #Final df
+    df_melted = df_obs.reset_index().melt(id_vars='index', var_name='feature', value_name='lr_mean')
+    merged_df = df_melted.merge(pval_melted[['index', 'feature', 'pval']], on=['index', 'feature'], how='left')
+    
+    if lr_sep is not None:
+        merged_df[['source', 'ligand_complex', 'receptor_complex']] = merged_df['feature'].str.split(lr_sep, expand=True)
+        merged_df = merged_df.rename(columns={'index': 'target'})
+        final_df = merged_df[['source', 'ligand_complex', 'receptor_complex', 'target', 'lr_mean', 'pval']]
+    else:
+        final_df = merged_df
 
-    # Save result
-    adata.uns[uns_key] = observed_df
+    final_df = final_df.sort_values('pval', ascending=True)  
+
+    #Save result
+    adata.uns[uns_key] = final_df
