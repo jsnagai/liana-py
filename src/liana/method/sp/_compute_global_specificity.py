@@ -84,7 +84,7 @@ def compute_global_specificity(
     perm_stats = np.array([df_perm.values for df_perm in perm_stats_list])
 
     # Compute empirical p-values
-    k = np.sum(np.abs(perm_stats) >= np.abs(obs_values), axis=0)
+    k = np.sum(perm_stats >= obs_values, axis=0)
     p_values = (k + 1) / (n_perms + 1)
     pval_df = pd.DataFrame(p_values, index=df_obs.index, columns=df_obs.columns)
     pval_melted = pval_df.reset_index().melt(id_vars='index', var_name='feature', value_name='pval')
