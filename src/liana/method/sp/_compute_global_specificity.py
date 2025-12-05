@@ -61,12 +61,10 @@ def compute_global_specificity(
     if groupby not in adata.obs.columns:
         raise KeyError(f"`groupby`='{groupby}' not found in adata.obs.")
     
-    adata.obs[groupby] = adata.obs[groupby].astype('category')
-    rng_main = np.random.default_rng(seed)
-    original_groupby_labels = adata.obs[groupby]
-    groups_order = list(original_groupby_labels.cat.categories)
     X = _choose_mtx_rep(adata, layer=layer, use_raw=use_raw)
     var_names = adata.var_names
+    original_groupby_labels = adata.obs[groupby].astype('category')
+    groups_order = list(original_groupby_labels.cat.categories)
 
     #Compute observed statistic
     df_obs = get_group_mean(X, original_groupby_labels, var_names, groups_order=groups_order)
@@ -77,15 +75,10 @@ def compute_global_specificity(
 
     joblib_verbose = 5 if verbose else 0
 
-    #Precompute shuffled labels
-    permuted_labels_list = [
-        rng_main.permutation(original_groupby_labels.values)
-        for _ in range(n_perms)
-    ]
-
+    rng_main = np.random.default_rng(seed)
     perm_stats_list = Parallel(n_jobs=n_jobs, verbose=joblib_verbose)(
-        delayed(get_group_mean)(X, shuffled_labels, var_names, groups_order=groups_order)
-        for shuffled_labels in tqdm(permuted_labels_list, desc="Running permutations"))
+        delayed(get_group_mean)(X, rng_main.permutation(original_groupby_labels.values), var_names, groups_order=groups_order)
+        for _ in tqdm(range(n_perms), desc="Running permutations"))
 
     #Convert results to array
     perm_stats = np.array([df_perm.values for df_perm in perm_stats_list])
