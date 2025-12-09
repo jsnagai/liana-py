@@ -46,33 +46,40 @@ def spatial_neighbors(adata: AnnData,
     ----------
     %(adata)s
     bandwidth
-         Denotes signaling length (`l`) and controls the maximum distance at which two spots are considered.
-         Corresponds to the units in which spatial coordinates are expressed.
+         Denotes signaling length (`l`) and controls the maximum distance at
+         which two spots are considered. Corresponds to the units in which
+         spatial coordinates are expressed.
     cutoff
         Values below this cutoff will be set to 0.
     max_neighbours
-        Maximum nearest neighbours to be considered when generating spatial connectivity weights.
-        Essentially, the maximum number of edges in the spatial connectivity graph.
+        Maximum nearest neighbours to be considered when generating spatial
+        connectivity weights. Essentially, the maximum number of edges in the
+        spatial connectivity graph.
     kernel
         Kernel function used to generate connectivity weights.
         It controls the shape of the connectivity weights.
-        The following options are available: ['gaussian', 'exponential', 'linear', 'misty_rbf']
+        The following options are available: ['gaussian', 'exponential',
+        'linear', 'misty_rbf']
     set_diag
         Logical, sets connectivity diagonal to 0 if `False`. Default is `True`.
     zoi
         Zone of indifference. Values below this cutoff will be set to `np.inf`.
     standardize
-        Whether to (l1) standardize spatial proximities (connectivities) so that they sum to 1.
-        This plays a role when weighing border regions prior to downstream methods, as the number of spots
-        in the border region (and hence the sum of proximities) is smaller than the number of spots in the center.
-        Relevant for methods with unstandardized scores (e.g. product). Default is `False`.
+        Whether to (l1) standardize spatial proximities (connectivities) so that
+        they sum to 1. This plays a role when weighing border regions prior to
+        downstream methods, as the number of spots in the border region (and
+        hence the sum of proximities) is smaller than the number of spots in the
+        center. Relevant for methods with unstandardized scores (e.g. product).
+        Default is `False`.
     reference
-        Reference coordinates to use when generating spatial connectivity weights.
-        If `None`, uses the spatial coordinates in `adata.obsm[spatial_key]`.
-        This is only relevant if you want to use a different set of coordinates to generate spatial connectivity weights.
+        Reference coordinates to use when generating spatial connectivity
+        weights. If `None`, uses the spatial coordinates in
+        `adata.obsm[spatial_key]`. This is only relevant if you want to use a
+        different set of coordinates to generate spatial connectivity weights.
     %(spatial_key)s
     key_added
-        Key to add to `adata.obsp` if `inplace = True`. If reference is not `None`, key will be added to `adata.obsm`.
+        Key to add to `adata.obsp` if `inplace = True`. If reference is not
+        `None`, key will be added to `adata.obsm`.
     %(inplace)s
 
     Notes
@@ -82,9 +89,10 @@ def spatial_neighbors(adata: AnnData,
 
     Returns
     -------
-    If ``inplace = False``, returns an `np.array` with spatial connectivity weights.
-    Otherwise, modifies the ``adata`` object with the following key:
-        - :attr:`anndata.AnnData.obsp` ``['{key_added}_connectivities']`` with the aforementioned array
+    If ``inplace = False``, returns an `np.array` with spatial connectivity
+    weights. Otherwise, modifies the ``adata`` object with the following key:
+        - :attr:`anndata.AnnData.obsp` ``['{key_added}_connectivities']`` with
+        the aforementioned array
 
     Raises
     ------
@@ -93,6 +101,15 @@ def spatial_neighbors(adata: AnnData,
     AssertionError
         If the provided ``spatial_key`` is not in ``adata.obs`` or if ``kernel``
         function is not valid.
+
+    Examples
+    --------
+    See here `[1]`_ or here `[2]`_.
+
+    .. _[1]: https://liana-py.readthedocs.io/en/latest/notebooks/sma.html#compu\
+    te-spatial-proximies-for-the-multi-view-model
+    .. _[2]: https://liana-py.readthedocs.io/en/latest/notebooks/misty.html#bui\
+    ld-custom-misty-views
 
     """
     if cutoff is None:
@@ -132,7 +149,9 @@ def spatial_neighbors(adata: AnnData,
     elif kernel == 'linear':
         dist.data = _linear(dist.data, bandwidth)
     else: # XXX: Redudndant with check above?
-        raise ValueError("Please specify a valid family to generate connectivity weights")
+        raise ValueError(
+            "Please specify a valid family to generate connectivity weights"
+        )
 
     if not set_diag:
         dist.setdiag(0)
