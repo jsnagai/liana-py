@@ -1,7 +1,7 @@
 from numpy.testing import assert_almost_equal
 
 from liana.testing._sample_anndata import generate_toy_mdata
-from liana.utils import mdata_to_anndata, neg_to_zero, zi_minmax
+from liana.utils import mdata_to_anndata, neg_to_zero, zi_minmax, anndata_to_mdata
 
 mdata = generate_toy_mdata()
 
@@ -38,3 +38,11 @@ def test_mdata_transformations():
                              verbose=False)
     assert_almost_equal(adata.X.max(), 7.760507, decimal=5)
     assert_almost_equal(adata.X.min(), 0, decimal=5)
+
+
+def test_adata_to_mdata():
+    from scanpy.datasets import pbmc68k_reduced
+    adata = pbmc68k_reduced()
+    mdata = anndata_to_mdata(adata = adata, groupby = "bulk_labels", min_cells = 0)
+
+    assert mdata.shape == (adata.shape[0], adata.shape[1] * adata.obs["bulk_labels"].nunique())
