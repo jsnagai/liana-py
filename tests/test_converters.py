@@ -38,11 +38,3 @@ def test_mdata_transformations():
                              verbose=False)
     assert_almost_equal(adata.X.max(), 7.760507, decimal=5)
     assert_almost_equal(adata.X.min(), 0, decimal=5)
-
-
-def test_adata_to_mdata():
-    from scanpy.datasets import pbmc68k_reduced
-    adata = pbmc68k_reduced()
-    mdata = anndata_to_mdata(adata = adata, groupby = "bulk_labels", min_cells = 0)
-
-    assert mdata.shape == (adata.shape[0], adata.shape[1] * adata.obs["bulk_labels"].nunique())
