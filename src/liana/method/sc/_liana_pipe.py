@@ -197,7 +197,7 @@ def liana_pipe(adata: anndata.AnnData,
 
         proximity_df = spatial_pair_proximity(
             adata=adata,
-            groupby=groupby,
+            groupby='@label',
             spatial_key=spatial_key,
             verbose=verbose,
             **spatial_kwargs
