@@ -11,6 +11,7 @@
 - Added Python 3.13 support in classifiers. #216
 - Added Installation instructions in `installation.md`. #217
 - Properly check if a passed (cell type) labels in plotting are a string #220
+- Fixed an issue where MetalinksDB download would fail due to User-Agent restrictions.
 
 ## 1.6.1 (28.09.2025)
 
