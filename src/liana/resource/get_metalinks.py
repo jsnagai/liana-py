@@ -34,50 +34,32 @@ def _download_metalinksdb(verbose=True):
         else:
             return db_path
 
-    # Download the database with retry logic
-    import time
-    max_retries = 3
-    retry_delay = 2  # seconds
+    # Download the database
+    _logg("Downloading database...", verbose=verbose)
+    try:
+        # Figshare requires a browser-like User-Agent to bypass WAF
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(METALINKS_URL, headers=headers, stream=True, allow_redirects=True)
+        response.raise_for_status()  # Raise an error for bad status codes
 
-    for attempt in range(max_retries):
-        _logg(f"Downloading database (attempt {attempt + 1}/{max_retries})...", verbose=verbose)
-        try:
-            # Figshare requires browser-like headers to bypass WAF
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.5',
-                'Accept-Encoding': 'gzip, deflate',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1'
-            }
-            response = requests.get(METALINKS_URL, headers=headers, stream=True, allow_redirects=True, timeout=60)
-            response.raise_for_status()  # Raise an error for bad status codes
+        with open(db_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
 
-            with open(db_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
+        # Validate the downloaded file
+        file_size = os.path.getsize(db_path)
+        if file_size == 0:
+            os.remove(db_path)
+            raise RuntimeError("Downloaded file is empty. Please check the URL and try again.")
 
-            # Validate the downloaded file
-            file_size = os.path.getsize(db_path)
-            if file_size == 0:
-                os.remove(db_path)
-                raise RuntimeError("Downloaded file is empty. Please check the URL and try again.")
-
-            _logg(f"Database downloaded and saved to {db_path} ({file_size} bytes).", verbose=verbose)
-            return db_path
-
-        except (requests.exceptions.RequestException, OSError, RuntimeError) as e:
-            # Clean up failed download
-            if os.path.exists(db_path):
-                os.remove(db_path)
-
-            if attempt < max_retries - 1:
-                _logg(f"Download failed: {e}. Retrying in {retry_delay} seconds...", verbose=verbose)
-                time.sleep(retry_delay)
-                retry_delay *= 2  # Exponential backoff
-            else:
-                raise RuntimeError(f"Failed to download database after {max_retries} attempts: {e}") from e
+        _logg(f"Database downloaded and saved to {db_path} ({file_size} bytes).", verbose=verbose)
+    except (requests.exceptions.RequestException, OSError, RuntimeError) as e:
+        # Clean up failed download
+        if os.path.exists(db_path):
+            os.remove(db_path)
+        raise RuntimeError(f"Failed to download database: {e}") from e
 
     return db_path
 
