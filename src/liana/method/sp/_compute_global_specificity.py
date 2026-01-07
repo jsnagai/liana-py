@@ -71,7 +71,7 @@ def compute_global_specificity(
     original_groupby_labels = adata.obs[groupby].astype('category')
     groups_order = list(original_groupby_labels.cat.categories)
 
-    #Compute observed statistic
+    # Compute observed statistic
     df_obs = _get_group_mean(X, original_groupby_labels, var_names, groups_order=groups_order)
     obs_values = df_obs.values
 
@@ -84,7 +84,7 @@ def compute_global_specificity(
         delayed(_get_group_mean)(X, rng_main.permutation(original_groupby_labels.values), var_names, groups_order=groups_order)
         for _ in tqdm(range(n_perms), desc="Running permutations", disable=not verbose))
 
-    #Convert results to array
+    # Convert results to array
     perm_stats = np.array([df_perm.values for df_perm in perm_stats_list])
 
     # Compute empirical p-values
@@ -106,5 +106,5 @@ def compute_global_specificity(
 
     final_df = final_df.sort_values('pval', ascending=True)
 
-    #Save result
+    # Save result
     adata.uns[uns_key] = final_df

@@ -197,12 +197,15 @@ def liana_pipe(adata: anndata.AnnData,
 
         proximity_df = spatial_pair_proximity(
             adata=adata,
-            groupby='@label',
+            groupby=groupby,
             spatial_key=spatial_key,
             verbose=verbose,
             **spatial_kwargs
         )
         # Set interacting to 0 where not interacting
+        # Note: this sets proximity to 0 for non-interacting pairs (according to the count/interaction
+        # threshold used inside spatial_pair_proximity), so the resulting "proximity" column reflects
+        # both spatial closeness AND interaction/count-based significance rather than pure distance.
         proximity_df['proximity'] = proximity_df['proximity'] * proximity_df['interacting']
 
         lr_res = lr_res.merge(
