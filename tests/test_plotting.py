@@ -85,3 +85,17 @@ def test_circle_plot():
                 pivot_mode='mean', score_key='specificity_rank')
     circle_plot(adata, groupby='random', liana_res=liana_res, pivot_mode='counts',
                 filter_fun=lambda x: x['specificity_rank'] < 0.95)
+
+def test_feature_by_group():
+    from liana.plotting import feature_by_group
+    from liana.testing._sample_anndata import generate_toy_spatial
+    adata = generate_toy_spatial()
+    feature_by_group(
+        adata=adata,
+        groupby='bulk_labels',
+        labels=['Dendritic', 'CD56+ NK'],
+        feature='HES4',
+        normalize=True,
+        percentile_scaling=(5, 95),
+        show_counts=True
+    )
