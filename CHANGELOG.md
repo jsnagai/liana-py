@@ -10,6 +10,7 @@
 - Bumped the package version to 1.7.0 across configuration files, and updated dependencies for `decoupler` and `cvxpy-base` to `>=1.7.0`.
 - Added Python 3.13 support in classifiers. #216
 - Added Installation instructions in `installation.md`. #217
+- Properly check if a passed (cell type) labels in plotting are a string #220
 
 ## 1.6.1 (28.09.2025)
 

@@ -15,9 +15,6 @@ def _get_group_mean(X, groupby_labels, var_names, groups_order=None):
     s = pd.Series(groupby_labels)
     groups_dum = pd.get_dummies(s, dummy_na=False)
 
-    if groups_order is not None:
-        groups_dum = groups_dum.reindex(columns=groups_order, fill_value=0)
-
     t_sparse = csr_matrix(groups_dum)
     col_sums = np.asarray(t_sparse.sum(axis=0)).ravel()
     col_sums[col_sums == 0] = 1.0
