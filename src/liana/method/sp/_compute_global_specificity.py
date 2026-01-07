@@ -48,8 +48,7 @@ def compute_global_specificity(
     This function performs a one-sided permutation test to assess whether the observed
     group-specific means are significantly higher than expected by chance. P-values are
     computed using the formula (k + 1) / (n_perms + 1), where k is the number of
-    permutations with values greater than or equal to the observed statistic. The +1
-    pseudocount prevents zero p-values.
+    permutations with values greater than or equal to the observed statistic.
 
     Args:
         %(adata)s
