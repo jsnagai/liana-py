@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.1 (24.01.2026)
+
+- Fixed issue with Metalinks download due to User-Agent restrictions.
+- Added scanpy version compatibility using getattr to handle both _set_default_colors_for_categorical_obs (old) and set_default_colors_for_categorical_obs (new).
+
+
 ## 1.7.0 (07.01.2026)
 
 - Inflow implementation and tutorial #221 by @AtheerAS

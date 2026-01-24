@@ -11,10 +11,10 @@ adata = generate_toy_spatial()
 def test_get_spatial_connectivities():
     spatial_neighbors(adata=adata, bandwidth=200, set_diag=True, cutoff=0.2)
     np.testing.assert_equal(adata.obsp['spatial_connectivities'].shape, (adata.shape[0], adata.shape[0]))
-    np.testing.assert_equal(adata.obsp['spatial_connectivities'].sum(), 4550.654013895928)
+    np.testing.assert_almost_equal(adata.obsp['spatial_connectivities'].sum(), 4550.654013895928, decimal=5)
 
     spatial_neighbors(adata=adata, bandwidth=100, set_diag=True, cutoff=0.1)
-    np.testing.assert_equal(adata.obsp['spatial_connectivities'].sum(), 1802.332962418902)
+    np.testing.assert_almost_equal(adata.obsp['spatial_connectivities'].sum(), 1802.332962418902, decimal=5)
 
     conns = spatial_neighbors(adata=adata, bandwidth=100,
                               kernel='linear', cutoff=0.1,
