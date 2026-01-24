@@ -73,11 +73,11 @@ optional-dependencies.doc = [
   "ipython",
   "myst-nb>=1.1",
   "setuptools",
-  "sphinx>=8.1",
+  "sphinx>=8.1,<9",  # pinned <9 until sphinx-tabs supports Sphinx 9
   "sphinx-autodoc-typehints",
   "sphinx-book-theme>=1",
   "sphinx-copybutton",
-  "sphinx-tabs",
+  "sphinx-tabs>=3.4.5",
   "sphinxcontrib-bibtex>=1",
   "sphinxext-opengraph",
   "pre-commit",
