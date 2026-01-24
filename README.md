@@ -20,29 +20,51 @@ We welcome suggestions, ideas, and contributions! Please do not hesitate to cont
 A set of extensive vignettes can be found in the [LIANA+ documentation](https://liana-py.readthedocs.io/en/latest/).
 
 ## Decision Tree
-### Does the data contain spatial coordinates?
-#### Yes
-- **Q: Bivariate or unsupervised, multi-variate, and multi-view analysis?**
-  - **Bivariate:**
-    - **Q: Are you interested in identifying the subregions of interactions (i.e., local interactions)?**
-      - **Yes:** Check the [**Local** Bivariate Metrics](https://liana-py.readthedocs.io/en/latest/notebooks/bivariate.html#Bivariate-Ligand-Receptor-Relationships)
-      - **No:** Check the [**Global** Bivariate Metrics](https://liana-py.readthedocs.io/en/latest/notebooks/bivariate.html#Bivariate-Ligand-Receptor-Relationships)
-  - **Unsupervised:** [Multi-view learning](https://liana-py.readthedocs.io/en/latest/notebooks/misty.html)
 
-#### No
-- **Q: Are you interested in comparing CCC across samples?**
-  - **Yes:**
-    - **Q: Are you interested in a specific contrast?**
-      - **Yes:** [Differential Contrasts and Downstream Signalling](https://liana-py.readthedocs.io/en/latest/notebooks/targeted.html)
-      - **No:** Unsupervised Cross-conditional LR inference with [MOFA+](https://liana-py.readthedocs.io/en/latest/notebooks/mofatalk.html) or [Tensor-cell2cell](https://liana-py.readthedocs.io/en/latest/notebooks/liana_c2c.html)
-  - **No:** [Steady-state Ligand-Receptor inference](https://liana-py.readthedocs.io/en/latest/notebooks/basic_usage.html)
+```mermaid
+flowchart TD
+    Start[What type of data?] --> Spatial{Spatial<br/>coordinates?}
+    Start --> Modal{Multi-modal?}
 
-### Is your data Multi-modal?
-- **Spatial:** [Integrating Multi-Modal Spatially-Resolved Technologies](https://liana-py.readthedocs.io/en/latest/notebooks/sma.html)
-- **Non-Spatial:** [Integrating Multi-Modal Single-Cell Technologies](https://liana-py.readthedocs.io/en/latest/notebooks/sc_multi.html)
+    %% Spatial branch
+    Spatial -->|Yes| SpatialRes{Resolution?}
+    SpatialRes -->|Single-cell| Inflow[Inflow Score]
+    SpatialRes -->|Spot-based| SpatialType{Analysis type?}
+    SpatialType -->|Bivariate| LocalQ{Local<br/>interactions?}
+    LocalQ -->|Yes| Local[Local Bivariate Metrics]
+    LocalQ -->|No| Global[Global Bivariate Metrics]
+    SpatialType -->|Unsupervised| MISTy[Multi-view Learning]
 
-#### Infer Metabolite-mediated CCC from transcriptomics?
-- [Non-spatial Data](https://liana-py.readthedocs.io/en/latest/notebooks/sc_multi.html#Metabolite-mediated-CCC-from-Transcriptomics-Data)
+    %% Non-spatial branch
+    Spatial -->|No| Compare{Compare across<br/>samples?}
+    Compare -->|Yes| Contrast{Specific<br/>contrast?}
+    Contrast -->|Yes| Targeted[Differential Contrasts]
+    Contrast -->|No| MOFA[MOFA+]
+    Contrast -->|No| Tensor[Tensor-cell2cell]
+    Tensor --> TensorExt[Extended Tutorials]
+    Compare -->|No| Steady[Steady-state LR Inference]
+
+    %% Multi-modal branch
+    Modal -->|Spatial| SMA[Multi-Modal Spatial]
+    Modal -->|Non-Spatial| SCMulti[Multi-Modal Single-Cell]
+
+    %% Metabolite sub-branch
+    SCMulti --> Metab[Metabolite-mediated CCC]
+
+    %% Links (click events)
+    click Inflow "https://liana-py.readthedocs.io/en/latest/notebooks/inflow_score.html"
+    click Local "https://liana-py.readthedocs.io/en/latest/notebooks/bivariate.html"
+    click Global "https://liana-py.readthedocs.io/en/latest/notebooks/bivariate.html"
+    click MISTy "https://liana-py.readthedocs.io/en/latest/notebooks/misty.html"
+    click Targeted "https://liana-py.readthedocs.io/en/latest/notebooks/targeted.html"
+    click MOFA "https://liana-py.readthedocs.io/en/latest/notebooks/mofatalk.html"
+    click Tensor "https://liana-py.readthedocs.io/en/latest/notebooks/liana_c2c.html"
+    click TensorExt "https://ccc-protocols.readthedocs.io/en/latest/"
+    click Steady "https://liana-py.readthedocs.io/en/latest/notebooks/basic_usage.html"
+    click SMA "https://liana-py.readthedocs.io/en/latest/notebooks/sma.html"
+    click SCMulti "https://liana-py.readthedocs.io/en/latest/notebooks/sc_multi.html"
+    click Metab "https://liana-py.readthedocs.io/en/latest/notebooks/sc_multi.html#Metabolite-mediated-CCC"
+```
 
 ## API
 For further information please check LIANA's [API documentation](https://liana-py.readthedocs.io/en/latest/api.html).
