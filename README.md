@@ -39,7 +39,9 @@ flowchart TD
     Spatial -->|No| Compare{Compare across<br/>samples?}
     Compare -->|Yes| Contrast{Specific<br/>contrast?}
     Contrast -->|Yes| Targeted[Differential Contrasts]
-    Contrast -->|No| Unsup[MOFA+ / Tensor-cell2cell]
+    Contrast -->|No| MOFA[MOFA+]
+    Contrast -->|No| Tensor[Tensor-cell2cell]
+    Tensor --> TensorExt[Extended Tutorials]
     Compare -->|No| Steady[Steady-state LR Inference]
 
     %% Multi-modal branch
@@ -55,7 +57,9 @@ flowchart TD
     click Global "https://liana-py.readthedocs.io/en/latest/notebooks/bivariate.html"
     click MISTy "https://liana-py.readthedocs.io/en/latest/notebooks/misty.html"
     click Targeted "https://liana-py.readthedocs.io/en/latest/notebooks/targeted.html"
-    click Unsup "https://liana-py.readthedocs.io/en/latest/notebooks/mofatalk.html"
+    click MOFA "https://liana-py.readthedocs.io/en/latest/notebooks/mofatalk.html"
+    click Tensor "https://liana-py.readthedocs.io/en/latest/notebooks/liana_c2c.html"
+    click TensorExt "https://ccc-protocols.readthedocs.io/en/latest/"
     click Steady "https://liana-py.readthedocs.io/en/latest/notebooks/basic_usage.html"
     click SMA "https://liana-py.readthedocs.io/en/latest/notebooks/sma.html"
     click SCMulti "https://liana-py.readthedocs.io/en/latest/notebooks/sc_multi.html"
