@@ -19,30 +19,23 @@ def _download_metalinksdb(verbose=True):
     """
     requests = _check_if_installed("requests")
 
-    METALINKS_URL = "https://figshare.com/ndownloader/files/60861292"
+    # GitHub Releases URL (CI-friendly, no WAF issues)
+    METALINKS_URL = "https://github.com/saezlab/liana-py/releases/download/metalinksdb/metalinksdb.db"
 
-    # Define the local filename to save the downloaded database
     db_file_name = 'metalinksdb.db'
     db_path = os.path.join(os.getcwd(), db_file_name)
 
-    # Check if the database file already exists and is valid
     if os.path.exists(db_path):
-        # Check if file is empty or corrupted
         if os.path.getsize(db_path) == 0:
             _logg("Existing database file is empty. Removing and re-downloading...", verbose=verbose)
             os.remove(db_path)
         else:
             return db_path
 
-    # Download the database
     _logg("Downloading database...", verbose=verbose)
     try:
-        # Figshare requires a browser-like User-Agent to bypass WAF
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-        response = requests.get(METALINKS_URL, headers=headers, stream=True, allow_redirects=True)
-        response.raise_for_status()  # Raise an error for bad status codes
+        response = requests.get(METALINKS_URL, stream=True, allow_redirects=True)
+        response.raise_for_status()
 
         with open(db_path, 'wb') as f:
             for chunk in response.iter_content(chunk_size=8192):
