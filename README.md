@@ -63,7 +63,7 @@ flowchart TD
     click Steady "https://liana-py.readthedocs.io/en/latest/notebooks/basic_usage.html"
     click SMA "https://liana-py.readthedocs.io/en/latest/notebooks/sma.html"
     click SCMulti "https://liana-py.readthedocs.io/en/latest/notebooks/sc_multi.html"
-    click Metab "https://liana-py.readthedocs.io/en/latest/notebooks/sc_multi.html#Metabolite-mediated-CCC"
+    click Metab "https://liana-py.readthedocs.io/en/latest/notebooks/sc_multi.html#metabolite-mediated-ccc-from-transcriptomics-data"
 ```
 
 ## API
