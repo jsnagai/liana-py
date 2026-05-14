@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.2 (14.05.2026)
+
+- Fixed `get_hcop_orthologs` to use the HGNC Google Cloud Storage bucket instead of the defunct EBI FTP mirror, resolving 404 errors in CI.
+- Added `target_organism` parameter (default `"mouse"`) to `get_hcop_orthologs`, enabling homology mapping to any of the 19 species available in the HCOP database.
+- Updated documentation notebook (`prior_knowledge.ipynb`) to use the new `target_organism` API.
+
 ## 1.7.1 (24.01.2026)
 
 - Fixed issue with Metalinks download due to User-Agent restrictions.

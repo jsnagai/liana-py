@@ -7,6 +7,8 @@ import pandas as pd
 
 from liana._logging import _logg
 
+_HCOP_BASE = "https://storage.googleapis.com/public-download-files/hcop"
+
 
 def _replace_subunits(lst, my_dict, one_to_many):
     result = []
@@ -157,24 +159,34 @@ def translate_resource(resource, map_df, columns=None, **kwargs):
     return resource
 
 
-def get_hcop_orthologs(url="https://storage.googleapis.com/public-download-files/hcop/human_mouse_hcop_fifteen_column.txt.gz",
+def get_hcop_orthologs(target_organism="mouse",
+                       url=None,
                        filename=None,
                        min_evidence=3,
-                       columns = None
+                       columns=None
                        ):
     """
-    Simple function to download the HCOP file and filter it by minimum evidence.
+    Download the HCOP orthology file and filter it by minimum evidence.
 
     Parameters
     ----------
-    url : str
-        URL of the HCOP file. HGNC moved hosting from EBI FTP to Google Cloud Storage.
-    filename : str
-        Name of the file to save the HCOP file.
+    target_organism : str
+        Target organism for orthology mapping. Default is ``"mouse"``.
+        Supported values: ``anole_lizard``, ``c.elegans``, ``cat``, ``cattle``,
+        ``chicken``, ``chimpanzee``, ``dog``, ``fruitfly``, ``horse``, ``macaque``,
+        ``mouse``, ``opossum``, ``pig``, ``platypus``, ``rat``, ``s.cerevisiae``,
+        ``s.pombe``, ``xenopus``, ``zebrafish``.
+        The target-organism column in the returned DataFrame follows the pattern
+        ``{target_organism}_symbol`` (e.g. ``mouse_symbol``, ``rat_symbol``).
+    url : str, optional
+        Override the download URL. If ``None`` (default), the URL is constructed
+        from ``target_organism`` using the HGNC Google Cloud Storage bucket.
+    filename : str, optional
+        Local filename to save the downloaded file. Derived from the URL if ``None``.
     min_evidence : int
-        Minimum number of evidences to keep the interaction, where evidence is the number of orthology resources supporting the interaction.
-    columns : list
-        Columns to keep in the final DataFrame. If None, it will keep the default columns.
+        Minimum number of orthology resources that must support an interaction.
+    columns : list, optional
+        Columns to keep in the final DataFrame. If ``None``, all columns are kept.
 
     Returns
     -------
@@ -184,7 +196,7 @@ def get_hcop_orthologs(url="https://storage.googleapis.com/public-download-files
     Details
     -------
     HCOP is a composite database combining data from various orthology resources.
-    It provides a comprehensive set of orthologs among human, mouse, and rat, among many other species.
+    It provides a comprehensive set of human orthologs across many species.
 
     If you use this function, please reference the original HCOP papers:
     - Eyre, T.A., Wright, M.W., Lush, M.J. and Bruford, E.A., 2007. HCOP: a searchable database of human orthology predictions. Briefings in bioinformatics, 8(1), pp.2-5.
@@ -192,6 +204,8 @@ def get_hcop_orthologs(url="https://storage.googleapis.com/public-download-files
 
     For more information, please visit the HCOP website: https://www.genenames.org/tools/hcop/
     """
+    if url is None:
+        url = f"{_HCOP_BASE}/human_{target_organism}_hcop_fifteen_column.txt.gz"
     # check if exists
     if filename is None:
         filename = os.path.basename(url.split("/")[-1])
