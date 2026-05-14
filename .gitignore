@@ -37,6 +37,8 @@ docs/generated/*
 *.db
 *.pkl
 *.png
+*.pdf
+*.h5df
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

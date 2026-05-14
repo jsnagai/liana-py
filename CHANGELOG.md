@@ -5,6 +5,11 @@
 - Fixed `get_hcop_orthologs` to use the HGNC Google Cloud Storage bucket instead of the defunct EBI FTP mirror, resolving 404 errors in CI.
 - Added `target_organism` parameter (default `"mouse"`) to `get_hcop_orthologs`, enabling homology mapping to any of the 19 species available in the HCOP database.
 - Updated documentation notebook (`prior_knowledge.ipynb`) to use the new `target_organism` API.
+- Updated `sc_multi.ipynb` metabolite-receptor section for decoupler v2: renamed `pd_net`/`t_net` columns to `source`/`target`/`weight` and removed deprecated `source`/`target`/`weight`/`min_n` kwargs from `estimate_metalinks` (replaced by `tmin`).
+- Standardized all public docstrings to NumPy format and added type annotations across public modules (#219).
+- Added mypy type-checking to pre-commit hooks (`--no-strict-optional --ignore-missing-imports`).
+- Added `build.yaml` CI workflow: validates the package build with `uv build` + `twine check --strict` on every push and pull request.
+- Renamed `.github/workflows/main.yml` → `test.yml`.
 
 ## 1.7.1 (24.01.2026)
 
