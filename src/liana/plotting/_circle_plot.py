@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Literal
 
 import networkx as nx
@@ -7,6 +8,7 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 from matplotlib import pyplot as plt
+from matplotlib.axes import Axes
 
 from liana._constants import Keys as K
 from liana._docs import d
@@ -78,10 +80,29 @@ def _get_adata_colors(adata, label):
 
 def get_mask_df(
         pivot_table: pd.DataFrame,
-        source_cell_type: list | str = None,
-        target_cell_type: list | str = None,
-        mode: Literal['and', 'or'] ='or') -> pd.DataFrame:
+        source_cell_type: list[str] | str | None = None,
+        target_cell_type: list[str] | str | None = None,
+        mode: Literal['and', 'or'] = 'or'
+        ) -> pd.DataFrame:
+    """
+    Applies masking to a given table based on given source and/or target cell types and mode.
 
+    Parameters
+    ----------
+    pivot_table
+        The table to apply masking to.
+    source_cell_type
+        Source cell type(s) to mask for.
+    target_cell_type
+        Target cell type(s) to mask for.
+    mode
+        Which way to apply the mask, can be either `'and'` or `'or'` (i.e. intersection or union).
+
+    Returns
+    -------
+    The resulting masked table
+
+    """
     if source_cell_type is None and target_cell_type is None:
         return pivot_table
 
@@ -117,23 +138,23 @@ def circle_plot(
         orderby: str | None = None,
         orderby_ascending: bool | None = None,
         orderby_absolute: bool = False,
-        filter_fun: callable = None,
-        source_labels: list | str | None = None,
-        target_labels: list | str | None = None,
-        ligand_complex: list | str | None = None,
-        receptor_complex: list | str | None = None,
+        filter_fun: Callable = None,
+        source_labels: list[str] | str | None = None,
+        target_labels: list[str] | str | None = None,
+        ligand_complex: list[str] | str | None = None,
+        receptor_complex: list[str] | str | None = None,
         pivot_mode: Literal['counts', 'mean'] = 'counts',
         mask_mode: Literal['and', 'or'] = 'or',
-        figure_size: tuple = (5, 5),
+        figure_size: tuple[float, float] = (5, 5),
         edge_alpha: float = .5,
         edge_arrow_size: int = 10,
-        edge_width_scale: tuple = (1, 5),
+        edge_width_scale: tuple[float, float] = (1, 5),
         node_alpha: float = 1,
-        node_size_scale: tuple = (100, 400),
-        node_label_offset: tuple = (0.1, -0.2),
+        node_size_scale: tuple[float, float] = (100, 400),
+        node_label_offset: tuple[float, float] = (0.1, -0.2),
         node_label_size: int = 8,
         node_label_alpha: float = .7,
-        ):
+        ) -> Axes:
     """
     Visualize the cell-cell communication network using a circular plot.
 
@@ -146,7 +167,7 @@ def circle_plot(
     %(source_key)s
     %(target_key)s
     %(score_key)s
-    inverse_score : bool, optional
+    inverse_score
         Whether to invert the score, by default False. If True, the score will be -log10(score).
     %(top_n)s
     %(orderby)s
@@ -157,34 +178,44 @@ def circle_plot(
     %(target_labels)s
     %(ligand_complex)s
     %(receptor_complex)s
-    pivot_mode : Literal['counts', 'mean'], optional
+    pivot_mode
         The mode of the pivot table, by default 'counts'.
         - 'counts': The number of connections between source and target.
         - 'mean': The mean of the values of `score_key` between source and target cell types (groupby).
         Note that `filter_fun` differs by pivot_mode: when counts it would remove all interactions
         that don't pass the filter, while for 'mean' it would retain interactions don't pass the filter
         if the same interaction passes it for any cell type pair.
-    mask_mode : Literal['and', 'or'], optional
+    mask_mode
         The mode of the mask, by default 'or'.
         - 'or': Include the source or target cell type.
         - 'and': Include the source and target cell type.
     %(figure_size)s
-    edge_alpha : float, optional
+    edge_alpha
         The transparency of the edges, by default .5.
-    edge_arrow_size : int, optional
+    edge_arrow_size
         The size of the arrow, by default 10.
-    edge_width_scale : tuple, optional
+    edge_width_scale
         The scale of the edge width, by default (1, 5).
-    node_alpha : float, optional
+    node_alpha
         The transparency of the nodes, by default 1.
-    node_size_scale : tuple, optional
+    node_size_scale
         The scale of the node size, by default (100, 400).
-    node_label_offset : tuple, optional
+    node_label_offset
         The offset of the node label, by default (0.1, -0.2).
-    node_label_size : int, optional
+    node_label_size
         The size of the node label, by default 8.
-    node_label_alpha : float, optional
+    node_label_alpha
         The transparency of the node label, by default .7.
+
+    Returns
+    -------
+    The figure axes containing the circle plot.
+
+    Raises
+    ------
+    ValueError
+        If `groupby` is not provided
+
     """
     if groupby is None:
         raise ValueError('`groupby` must be provided!')

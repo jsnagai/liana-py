@@ -30,5 +30,3 @@ def test_raises_if_invalid_groupby():
             n_perms=1,
             lr_sep=None
         )
-
-

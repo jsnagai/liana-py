@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from functools import reduce
 
-import anndata
 import numpy as np
 import pandas
 import pandas as pd
 import scanpy as sc
+from anndata import AnnData
 from mudata import MuData
 from scipy.stats import norm
 
@@ -26,11 +26,11 @@ from liana.utils.spatial_neighbors import spatial_pair_proximity
 
 
 @d.dedent
-def liana_pipe(adata: anndata.AnnData,
+def liana_pipe(adata: AnnData,
                groupby: str,
                resource_name: str,
                resource: pd.DataFrame | None,
-               interactions,
+               interactions: list[tuple[str, str]],
                groupby_pairs: pd.DataFrame | None,
                expr_prop: float,
                min_cells: int,
@@ -51,7 +51,7 @@ def liana_pipe(adata: anndata.AnnData,
                _consensus_opts: list = None,
                _aggregate_method: str | None = None,
                mdata_kwargs: dict | None = None,
-               ):
+               ) -> AnnData:
     """
     Single-cell Ligand-receptor inference pipeline.
 
@@ -104,7 +104,7 @@ def liana_pipe(adata: anndata.AnnData,
         _add_cols = M.get_all_values()
 
     if n_perms is None:
-        _consensus_opts = 'Magnitude'
+        _consensus_opts = 'Magnitude'  # type: ignore[assignment]
 
     if supp_columns is None:
         supp_columns = []
@@ -387,7 +387,7 @@ def _expm1_base(X, base):
 
 
 def _run_method(lr_res: pandas.DataFrame,
-                adata: anndata.AnnData,
+                adata: AnnData,
                 groupby: str,
                 expr_prop: float,
                 _score,

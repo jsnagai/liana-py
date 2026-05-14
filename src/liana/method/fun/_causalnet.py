@@ -1,3 +1,4 @@
+import corneto
 import numpy as np
 import pandas as pd
 
@@ -5,25 +6,25 @@ from liana._constants import DefaultValues as V
 from liana._logging import _check_if_installed, _logg
 
 
-def build_prior_network(ppis,
-                        input_nodes,
-                        output_nodes,
-                        lr_sep=None,
-                        verbose=V.verbose):
+def build_prior_network(ppis: pd.DataFrame | list[tuple[str, str]],
+                        input_nodes: dict[str, float],
+                        output_nodes: dict[str, float],
+                        lr_sep: str | None = None,
+                        verbose:bool = V.verbose) -> corneto.Graph:
     """
     Build Prior Network from PPIs and input/output nodes.
 
     Parameters
     ----------
-    ppis : list of tuples or pandas DataFrame
+    ppis
         The PPIs to use for the prior network. If a pandas DataFrame is provided, it must have the columns
-    input_nodes : dict
+    input_nodes
         A dictionary of input nodes. The keys are the node names, the values are the node scores.
-    output_nodes : dict
+    output_nodes
         A dictionary of output nodes. The keys are the node names, the values are the node scores.
-    lr_sep : str, optional
+    lr_sep
         The separator to use to split the input nodes into ligand and receptor. If None, the input nodes will be used as is.
-    verbose : bool, optional
+    verbose
         Whether to print progress information. Default: True
 
     Returns
@@ -86,22 +87,22 @@ def _get_scores(d):
 
 
 def find_causalnet(
-        prior_graph,
-        input_node_scores,
-        output_node_scores,
-        node_weights=None,
-        node_cutoff=0.1,
-        min_penalty=0.01,
-        max_penalty=1.0,
-        missing_penalty=10,
-        edge_penalty=0.01,
-        solver=None,
-        seed=1337,
-        max_runs=1,
-        stable_runs=5,
-        verbose=True,
+        prior_graph: corneto.Graph,
+        input_node_scores: dict[str, float],
+        output_node_scores: dict[str, float],
+        node_weights: dict[str, float] = None,
+        node_cutoff: float = 0.1,
+        min_penalty: float = 0.01,
+        max_penalty: float = 1.0,
+        missing_penalty: float = 10,
+        edge_penalty: float = 0.01,
+        solver: str | None = None,
+        seed: int = 1337,
+        max_runs: int = 1,
+        stable_runs: int = 5,
+        verbose: bool = True,
         **kwargs
-        ):
+        ) -> tuple[pd.DataFrame, corneto.backend._base.ProblemDef]:
     """
     Find the causal network that best explains the input/output node scores.
 
@@ -145,6 +146,13 @@ def find_causalnet(
         Whether to print progress information. Default: True
     **kwargs : dict, optional
         Additional arguments to pass to the solver.
+
+    Returns
+    -------
+    df_all
+        DataFrame containing the resulting causal network
+    P
+        Insantce of the Corneto problem definition
     """
     cn = _check_if_installed("corneto")
 

@@ -39,67 +39,67 @@ def _make_view(adata, nz_threshold=0.1, add_obs=False, use_raw=False,
     return adata
 
 
-def genericMistyData(intra,
-                     intra_use_raw=False,
-                     intra_layer=None,
-                     extra=None,
-                     extra_use_raw=False,
-                     extra_layer=None,
-                     nz_threshold=0.1,
-                     add_para=True,
-                     spatial_key='spatial',
-                     set_diag=False,
-                     kernel = 'misty_rbf',
-                     bandwidth = 100,
-                     zoi = 0,
-                     cutoff = 0.1,
-                     add_juxta=True,
-                     n_neighs = 6,
-                     max_neighs = 18,
-                     verbose=False
-                     ):
+def genericMistyData(intra: AnnData,
+                     intra_use_raw: bool = False,
+                     intra_layer: str = None,
+                     extra: AnnData = None,
+                     extra_use_raw: bool = False,
+                     extra_layer: str = None,
+                     nz_threshold: float = 0.1,
+                     add_para: bool = True,
+                     spatial_key: str = 'spatial',
+                     set_diag: bool = False,
+                     kernel: str = 'misty_rbf',
+                     bandwidth: float = 100,
+                     zoi: float = 0,
+                     cutoff: float = 0.1,
+                     add_juxta: bool = True,
+                     n_neighs: int = 6,
+                     max_neighs: int = 18,
+                     verbose: bool = False
+                     ) -> MistyData:
     """
     Construct a MistyData object from an AnnData object with views as presented in the manuscript.
 
     Parameters
     ----------
-    intra : `anndata.AnnData`
+    intra
         AnnData object with the intraview
-    intra_use_raw : `bool`, optional (default: False)
+    intra_use_raw
         Whether to use the raw data of the intraview.
-    intra_layer : `str`, optional (default: None)
+    intra_layer
         The layer of the intraview to use.
-    extra : `anndata.AnnData`, optional (default: None)
+    extra
         AnnData object with the extraview(s). If None, the extraview is set to be the same as the intraview.
-    extra_use_raw : `bool`, optional (default: False)
+    extra_use_raw
         Whether to use the raw data of the extraview.
-    extra_layer : `str`, optional (default: None)
+    extra_layer
         The layer of the extraview(s) to use.
-    nz_threshold: `float`, optional (default: 0.1)
+    nz_threshold
         The threshold for the number of non-zero entries in each view.
-    add_para : `bool`, optional (default: True)
+    add_para
         Whether to add the paraview.
-    spatial_key : `str`, optional (default: 'spatial')
+    spatial_key
         The key in adata.obsm where the spatial coordinates are stored.
-    set_diag : `bool`, optional (default: True)
+    set_diag
         Whether to set the diagonal of the connectivity matrix to 1.
-    kernel : `str`, optional (default: 'misty_rbf')
+    kernel
         A radial basis function kernel to use for the generation of the connectivity matrix for the paraview.
         Default is 'misty_rbf', a kernel derivative of a Gaussian kernel.
-    bandwidth : `float`, optional (default: 100)
+    bandwidth
         The bandwidth of the kernel.
-    zoi : `float`, optional (default: 0)
+    zoi
         The zone of indifference of the kernel, i.e. the kernel is set to 0 for distances smaller than zoi.
-    cutoff : `float`, optional (default: 0.1)
+    cutoff
         The cutoff for the connectivity matrix.
-    add_juxta : `bool`, optional (default: True)
+    add_juxta
         Whether to add the juxtaview. The juxtaview is constructed using only the nearest neighbors.
         A bandwidth of 5 times the bandwidth of the paraview is used to ensure that the nearest neighbors within the radius.
-    n_neighs : `int`, optional (default: 6)
+    n_neighs
         The number of neighbors to consider when constructing the juxtaview.
-    max_neighs: `int`, optional (default: 18)
+    max_neighs
         The maximum number of neighbors to consider when constructing the Paraview.
-    verbose : `bool`, optional (default: False)
+    verbose
         Whether to print progress.
 
     Returns
@@ -160,56 +160,57 @@ def _check_if_squidpy() -> ModuleType:
     return sq
 
 
-def lrMistyData(adata,
-                resource_name='consensus',
-                resource=None,
-                nz_threshold=0.1,
-                use_raw = False,
-                layer = None,
-                spatial_key='spatial',
-                kernel = 'misty_rbf',
-                bandwidth = 100,
-                set_diag = False,
-                cutoff = 0.1,
-                zoi = 0,
-                verbose = False
-                ):
+def lrMistyData(adata: AnnData,
+                resource_name: str = 'consensus',
+                resource: pd.DataFrame = None,
+                nz_threshold: float = 0.1,
+                use_raw: bool = False,
+                layer: str = None,
+                spatial_key: str = 'spatial',
+                kernel: str = 'misty_rbf',
+                bandwidth: float = 100,
+                set_diag: bool = False,
+                cutoff: float = 0.1,
+                zoi: float = 0,
+                verbose: bool = False
+                ) -> MistyData:
     """
     Generate a MistyData object from an AnnData object in ligand-receptor format.
 
     Parameters
     ----------
-    adata : `anndata.AnnData`
+    adata
         AnnData object
-    resource_name : `str`, optional (default: 'consensus')
+    resource_name
         The name of the resource to use. See `show_resources` for available resources.
-    resource : `pandas.DataFrame`, optional (default: None)
+    resource
         A resource in the form of a pandas DataFrame. If None, the resource is selected using `select_resource`.
-    nz_threshold : `float`, optional (default: 0.1)
+    nz_threshold
         The threshold for the number of non-zero entries in each view.
-    use_raw : `bool`, optional (default: False)
+    use_raw
         Whether to use the raw data of the AnnData object.
-    layer : `str`, optional (default: None)
+    layer
         The layer of the AnnData object to use.
-    spatial_key : `str`, optional (default: 'spatial')
+    spatial_key
         The key in adata.obsm where the spatial coordinates are stored.
-    kernel : `str`, optional (default: 'misty_rbf')
+    kernel
         A radial basis function kernel to use for the generation of the connectivity matrix for the extra view.
         Default is 'misty_rbf', a kernel derivative of a Gaussian kernel.
-    bandwidth : `float`, optional (default: 100)
+    bandwidth
         The bandwidth of the kernel.
-    set_diag : `bool`, optional (default: True)
+    set_diag
         Whether to set the diagonal of the connectivity matrix to 1.
-    cutoff : `float`, optional (default: 0.1)
+    cutoff
         The minimum value cutoff for the connectivity matrix.
-    zoi : `float`, optional (default: 0)
+    zoi
         Zone of indifference of the kernel, i.e. the kernel is set to 0 for distances smaller than zoi.
-    verbose : `bool`, optional (default: False)
+    verbose
         Whether to print progress.
 
     Returns
     -------
     A `MistyData` object with receptors in the intra view & ligands in the extra view.
+
     """
     # TODO: reduce redundancies in documentation
     if resource is None:

@@ -63,27 +63,27 @@ def _generate_orthologs(data, column, map_dict, one_to_many):
 
 
 def translate_column(
-    resource,
-    map_df,
-    column,
-    replace=True,
-    one_to_many=1,
-    ):
+    resource: pd.DataFrame,
+    map_df: pd.DataFrame,
+    column: str,
+    replace: bool = True,
+    one_to_many: int = 1,
+    ) -> pd.DataFrame:
     """
     Generate orthologs for a given column in a DataFrame.
 
     Parameters
     ----------
-    resource : pandas.DataFrame
+    resource
         Input DataFrame.
-    map_df : pandas.DataFrame
+    map_df
         DataFrame with orthology mappings, where the first column is the source and the second column is the target for mapping.
-    column : str
+    column
         Column name to translate.
-    replace : bool, optional
+    replace
         Whether to replace the original column with the translated values. Default is True.
         If False, it will create a new column with the prefix "orthology_".
-    one_to_many : int, optional
+    one_to_many
         Maximum number of orthologs allowed per gene. Default is 1.
 
     Details
@@ -95,6 +95,11 @@ def translate_column(
     Returns
     -------
     Resulting DataFrame with translated column.
+
+    Raises
+    ------
+    ValueError
+        If the `mapping_df` does not contain 'source' and 'target' columns or `one_to_many` is not an integer
 
     """
     if not isinstance(one_to_many, int):
@@ -130,17 +135,22 @@ def translate_column(
 
 
 # function that loops over columns and applies translate_column
-def translate_resource(resource, map_df, columns=None, **kwargs):
+def translate_resource(
+        resource: pd.DataFrame,
+        map_df: pd.DataFrame,
+        columns: list[str] = None,
+        **kwargs
+        ) -> pd.DataFrame:
     """
     Generate orthologs for multiple columns in a DataFrame.
 
     Parameters
     ----------
-    resource : pandas.DataFrame
+    resource
         Input DataFrame.
-    map_df : pandas.DataFrame
+    map_df
         DataFrame with orthology mappings, where the first column is the source and the second column is the target for mapping.
-    columns : list
+    columns
         List of column names to translate.
     **kwargs
         Additional arguments for `liana.utils.translate_column`.
@@ -190,7 +200,7 @@ def get_hcop_orthologs(target_organism="mouse",
 
     Returns
     -------
-    mapping : pd.DataFrame
+    mapping
         DataFrame with the HCOP mapping.
 
     Details
@@ -203,6 +213,7 @@ def get_hcop_orthologs(target_organism="mouse",
     - Yates, B., Gray, K.A., Jones, T.E. and Bruford, E.A., 2021. Updates to HCOP: the HGNC comparison of orthology predictions tool. Briefings in Bioinformatics, 22(6), p.bbab155.
 
     For more information, please visit the HCOP website: https://www.genenames.org/tools/hcop/
+
     """
     if url is None:
         url = f"{_HCOP_BASE}/human_{target_organism}_hcop_fifteen_column.txt.gz"

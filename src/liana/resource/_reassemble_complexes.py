@@ -8,12 +8,13 @@ from liana._logging import _logg
 
 
 @d.dedent
-def filter_reassemble_complexes(lr_res,
-                                _key_cols,
-                                complex_cols,
-                                expr_prop,
-                                return_all_lrs=False,
-                                complex_policy='min'):
+def filter_reassemble_complexes(lr_res: pd.DataFrame,
+                                _key_cols: list[str],
+                                complex_cols: list[str],
+                                expr_prop: float,
+                                return_all_lrs: bool = False,
+                                complex_policy: str = 'min'
+                                ) -> pd.DataFrame:
     """
     Reassemble complexes from exploded long-format pandas Dataframe.
 
@@ -34,6 +35,7 @@ def filter_reassemble_complexes(lr_res,
     Return
     -----------
     lr_res: a reduced long-format pandas dataframe
+
     """
     # Filter by expr_prop (inner join only complexes where all subunits are expressed)
     expressed = (lr_res[_key_cols + ['ligand_props', 'receptor_props']]
@@ -63,7 +65,7 @@ def filter_reassemble_complexes(lr_res,
         lr_res = _reduce_complexes(col=col,
                                    lr_res=lr_res,
                                    key_cols=_key_cols,
-                                   aggs=aggs)
+                                   aggs=aggs)  # type: ignore[arg-type]
 
     # check if there are any duplicated subunits
     duplicate_mask = lr_res.duplicated(subset=_key_cols, keep=False)
@@ -81,9 +83,9 @@ def filter_reassemble_complexes(lr_res,
 
 def _reduce_complexes(col: str,
                       lr_res: pd.DataFrame,
-                      key_cols: list,
+                      key_cols: list[str],
                       aggs: (dict | str)
-                      ):
+                      ) -> pd.DataFrame:
     lr_res = lr_res.groupby(key_cols)
 
     # Get min cols by which we will join
@@ -102,8 +104,9 @@ def _reduce_complexes(col: str,
 
 
 def explode_complexes(resource: pd.DataFrame,
-                      SOURCE='ligand',
-                      TARGET='receptor') -> pd.DataFrame:
+                      SOURCE: str = 'ligand',
+                      TARGET: str = 'receptor'
+                      ) -> pd.DataFrame:
     """
     Function to explode ligand-receptor complexes
 
@@ -112,9 +115,9 @@ def explode_complexes(resource: pd.DataFrame,
     resource
         Ligand-receptor resource
     SOURCE
-        Name of the source (typically ligand) column
+        Name of the source (typically 'ligand') column
     TARGET
-        Name of the target (typically receptor) column
+        Name of the target (typically 'receptor') column
 
     Returns
     -------

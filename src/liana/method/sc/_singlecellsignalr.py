@@ -1,20 +1,23 @@
 import numpy as np
+from pandas import DataFrame
 
 from liana.method.sc._Method import Method, MethodMeta
 
 
-def _sca_score(x):
+def _sca_score(x: DataFrame) -> tuple[DataFrame, None]:
     """
     Calculate SingleCellSignalR-like LRscore
 
     Parameters
     ----------
     x
-        DataFrame row
+        DataFrame containing the ligand and receptor means
 
     Returns
     -------
-    (LRscore, None)
+    LRscore
+        The ligand-receptor scores
+    None
 
     """
     lr_sqrt = np.sqrt(x['ligand_means']) * np.sqrt(x['receptor_means'])

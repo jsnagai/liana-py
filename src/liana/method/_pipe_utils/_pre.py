@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
+from typing import Any
+
 import numpy as np
 import scanpy as sc
 from anndata import AnnData
@@ -10,12 +13,12 @@ from liana._logging import _logg
 
 
 def assert_covered(
-        subset,
-        superset,
+        subset: Iterable[Any],
+        superset: Iterable[Any],
         subset_name: str = "resource",
         superset_name: str = "var_names",
         prop_missing_allowed: float = 0.98,
-        verbose: bool = False) -> None:
+        verbose: bool = False):
     """
     Assert if elements are covered at a decent proportion
 
@@ -34,18 +37,20 @@ def assert_covered(
     verbose
         Verbosity flag
 
-    Returns
-    -------
-    None
+    Raises
+    ------
+    ValueError
+        When the the number of missing elements in subset (with respect to superset) is over the threshold
+
     """
     subset = np.asarray(subset)
     is_missing = ~np.isin(subset, superset)
-    if subset.size == 0:
+    if subset.size == 0:  # type: ignore[attr-defined]
         prop_missing = 1.
         x_missing = 'values in interactions argument'
     else:
-        prop_missing = np.sum(is_missing) / len(subset)
-        x_missing = ", ".join(list(subset[is_missing]))
+        prop_missing = np.sum(is_missing) / len(subset)  # type: ignore[arg-type]
+        x_missing = ", ".join(list(subset[is_missing]))  # type: ignore[index]
     if prop_missing > prop_missing_allowed:
         msg = (
             f"Please check if appropriate organism/ID type was provided! "
@@ -64,9 +69,9 @@ def prep_check_adata(adata: AnnData,
                      groupby_subset: np.array | None = None,
                      use_raw: bool | None = False,
                      layer: str | None = None,
-                     obsm=None,
-                     uns=None,
-                     complex_sep='_',
+                     obsm: dict[str, DataFrame] = None,
+                     uns: dict[str, Any] = None,
+                     complex_sep: str = '_',
                      verbose: bool | None = False) -> AnnData:
     """
     Check if the anndata object is in the correct format and preprocess
@@ -76,22 +81,36 @@ def prep_check_adata(adata: AnnData,
     adata
         Un-formatted Anndata.
     groupby
-        column to groupby. None if the ligand-receptor pipe
+        Column to groupby. None if the ligand-receptor pipe
         calling this function does not rely on cell labels.
         For example, if ligand-receptor stats are needed
         for the whole sample (global).
     min_cells
         minimum cells per cell identity. None if groupby is not passed.
+    groupby_subset
+        Collection of `obs` names, if provided, subsets the subgroups from groupby
     use_raw
         Use raw attribute of adata if present.
     layer
         Indicate whether to use any layer.
+    obsm
+        `AnnData.obsm` matrix collection to include in the resulting AnnData
+    uns
+        `AnnData.uns` unspecified mappings to inmclude in the resulting AnnData
+    complex_sep
+        Separator to use for complex names.
     verbose
         Verbosity flag.
+
+    Raises
+    ------
+    ValueError
+        If the data matrix contains non-finite values (NaN or Inf)
 
     Returns
     -------
     Anndata object to be used downstream
+
     """
     X = _choose_mtx_rep(adata=adata, use_raw=use_raw,
                         layer=layer, verbose=verbose)
@@ -165,8 +184,22 @@ def prep_check_adata(adata: AnnData,
     return adata
 
 
-def check_vars(var_names, complex_sep, verbose=False) -> list:
-    """Raise a warning if `complex_sep` is part of any variable name."""
+def check_vars(var_names: Iterable[str],
+               complex_sep: str,
+               verbose: bool = False
+               ) -> list[str]:
+    """
+    Raise a warning if `complex_sep` is part of any variable name.
+
+    Parameters
+    ----------
+    var_names
+        Variable names to check
+    complex_sep
+        Separator or any substring to check for in the variable names
+    %(verbose)s
+
+    """
     var_issues = []
     if complex_sep is not None:
         for name in var_names:
@@ -175,9 +208,13 @@ def check_vars(var_names, complex_sep, verbose=False) -> list:
     else:
         pass
 
+    # XXX: Achieves the same but faster:
+    # var_issues = [] if complex_sep is None else [i for i in var_names if complex_sep in i]
+
     _logg(f"{var_issues} contain `{complex_sep}`. Consider replacing those!",
          verbose=verbose & (len(var_issues) > 0), level='warn')
 
+    return var_issues
 
 
 def filter_resource(resource: DataFrame, var_names: Index) -> DataFrame:
@@ -198,7 +235,8 @@ def filter_resource(resource: DataFrame, var_names: Index) -> DataFrame:
 
     Returns
     -------
-    A filtered resource dataframe
+    A filtered resource DataFrame
+
     """
     # Remove those without any subunit
     resource = resource[(np.isin(resource.ligand, var_names)) &
@@ -219,7 +257,11 @@ def filter_resource(resource: DataFrame, var_names: Index) -> DataFrame:
     return resource[~resource.interaction.isin(missing_comps.interaction)]
 
 
-def _choose_mtx_rep(adata, use_raw=False, layer=None, verbose=False) -> csr_matrix:
+def _choose_mtx_rep(adata: AnnData,
+                    use_raw: bool = False,
+                    layer: str | None = None,
+                    verbose: bool = False
+                    ) -> csr_matrix:
     """
     Choose matrix (adapted from scanpy)
 

@@ -1,4 +1,5 @@
 import numpy as np
+from pandas import DataFrame
 
 from liana._constants import DefaultValues as V
 from liana._constants import PrimaryColumns as P
@@ -6,15 +7,15 @@ from liana._docs import d
 
 
 @d.dedent
-def generate_lr_geneset(resource,
-                        net,
-                        ligand_key=P.ligand,
-                        receptor_key=P.receptor,
-                        lr_sep=V.lr_sep,
-                        source='source',
-                        target='target',
-                        weight='weight'
-                        ):
+def generate_lr_geneset(resource: DataFrame,
+                        net: DataFrame,
+                        ligand_key: str = P.ligand,
+                        receptor_key: str = P.receptor,
+                        lr_sep: str = V.lr_sep,
+                        source: str = 'source',
+                        target: str = 'target',
+                        weight: str = 'weight'
+                        ) -> DataFrame:
     """
     Generate a ligand-receptor gene set from a resource and a network.
 
@@ -29,14 +30,14 @@ def generate_lr_geneset(resource,
         A pandas dataframe with [`ligand`, `receptor`] columns.
     net
         Prior knowledge network in bipartite or decoupler format.
-    ligand : str, optional
+    ligand
         Name of the ligand column in the resource
-    receptor : str, optional
+    receptor
         Name of the receptor column in the resource
     %(lr_sep)s
-    source : str, optional
+    source
         Name of the source column in the network.
-    weight : str, optional
+    weight
         Name of the weight column in the network. If None, all weights are set to 1.
 
     Returns
@@ -45,6 +46,7 @@ def generate_lr_geneset(resource,
     - interaction: ligand-receptor interaction
     - weight: mean weight of the interaction
     - source: source of the interaction
+
     """
     # TODO: Fix this if else, it's not very elegant
     if weight is None:

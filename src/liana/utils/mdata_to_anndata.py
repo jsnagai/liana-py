@@ -1,18 +1,21 @@
+from collections.abc import Callable
+
 import anndata as an
+from mudata import MuData
 
 from liana._docs import d
 from liana.method._pipe_utils._pre import _choose_mtx_rep
 
 
 @d.dedent
-def mdata_to_anndata(mdata,
-                     x_mod, y_mod,
-                     x_layer=None, y_layer=None,
-                     x_use_raw=False, y_use_raw=False,
-                     x_transform=None,
-                     y_transform=None,
-                     verbose=True
-                     ):
+def mdata_to_anndata(mdata: MuData,
+                     x_mod: str, y_mod: str,
+                     x_layer: str = None, y_layer: str = None,
+                     x_use_raw: bool = False, y_use_raw: bool = False,
+                     x_transform: Callable = None,
+                     y_transform: Callable = None,
+                     verbose: bool = True
+                     ) -> an.AnnData:
     """
     Convert a MultiData object to an AnnData object.
 
@@ -42,6 +45,12 @@ def mdata_to_anndata(mdata,
     -------
     An AnnData object with the two modalities concatenated.
     Information related to observations (obs, obsp, obsm) and `.uns` are copied from the original MuData object.
+
+    Raises
+    ------
+    ValueError
+        If `x_mod` and/or `y_mod` are not provided.
+
     """
     if x_mod is None or y_mod is None:
         raise ValueError("Both `x_mod` and `y_mod` must be provided!")

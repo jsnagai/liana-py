@@ -2,6 +2,7 @@ from itertools import product
 
 import numpy as np
 import pandas as pd
+from anndata import AnnData
 
 from liana._constants import DefaultValues as V
 from liana._constants import InternalValues as I
@@ -15,44 +16,45 @@ from liana.resource.select_resource import _handle_resource
 
 
 @d.dedent
-def df_to_lr(adata,
-             dea_df,
-             groupby,
-             stat_keys,
-             resource_name = V.resource_name,
-             resource = V.resource,
-             interactions = V.interactions,
-             groupby_pairs=V.groupby_pairs,
-             layer = V.layer,
-             use_raw = V.layer,
-             expr_prop = V.expr_prop,
-             min_cells = V.min_cells,
-             complex_col = None,
-             return_all_lrs=V.return_all_lrs,
-             source_labels = None,
-             target_labels = None,
-             lr_sep=V.lr_sep,
-             verbose = V.verbose,
-             ):
+def df_to_lr(adata: AnnData,
+             dea_df: pd.DataFrame,
+             groupby: str,
+             stat_keys: list[str],
+             resource_name: str = V.resource_name,
+             resource: pd.DataFrame = V.resource,
+             interactions: list[tuple[str, str]] = V.interactions,
+             groupby_pairs: pd.DataFrame = V.groupby_pairs,
+             layer: str | None = V.layer,
+             use_raw: bool = V.use_raw,
+             expr_prop: float = V.expr_prop,
+             min_cells: int = V.min_cells,
+             complex_col: str = None,
+             return_all_lrs: bool = V.return_all_lrs,
+             source_labels: list[str] = None,
+             target_labels: list[str] = None,
+             lr_sep: str = V.lr_sep,
+             verbose: bool = V.verbose,
+             ) -> pd.DataFrame:
     """
     Convert DEA results to ligand-receptor pairs.
 
     Parameters
     ----------
     %(adata)s
-    dea_df : pd.DataFrame
+    dea_df
         DEA results. Index must match adata.var_names
     %(groupby)s
-    stat_keys : list
+    stat_keys
         List of statistics to be used for ligand-receptor pairs
     %(resource_name)s
     %(resource)s
     %(interactions)s
+    %(groupby_pairs)s
     %(layer)s
     %(use_raw)s
     %(expr_prop)s
     %(min_cells)s
-    complex_col : str, optional
+    complex_col
         Column in `dea_df` to use for complex expression. Default is None.
         If None, will use mean expression ('expr') calculated per group in `groupby`.
     %(return_all_lrs)s
@@ -64,6 +66,13 @@ def df_to_lr(adata,
     Returns
     -------
     Returns a pd.DataFrame with joined ligand-receptor pairs and statistics.
+
+    Raises
+    ------
+    ValueError
+        If the `groupby` value is not in `adata` or `dea_df`, if `dea_df` indexes do not match `adata.var_names` or if `complex_col` does not match one of the computed stats.
+    AssertionError
+        If there's no match when grouping-by between `adata.obs` and `dea_df`.
 
     """
     _check_groupby(adata=adata, groupby=groupby, verbose=verbose)
@@ -161,7 +170,7 @@ def df_to_lr(adata,
 
     # ligand_ or receptor + stat_keys
     complex_cols = list(product(['ligand', 'receptor'], [complex_col]))
-    complex_cols = [f'{x}_{y}' for x, y in complex_cols]
+    complex_cols = [f'{x}_{y}' for x, y in complex_cols]  # type: ignore[misc]
 
     # assign receptor and ligand absolutes, NOTE deals with missing values
     _placeholders = ['ligand_absolute', 'receptor_absolute']

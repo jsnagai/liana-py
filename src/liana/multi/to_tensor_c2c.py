@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import numpy as np
 from anndata import AnnData
 from pandas import DataFrame
@@ -13,19 +15,19 @@ from liana.method import process_scores
 
 
 @d.dedent
-def to_tensor_c2c(adata:AnnData=None,
-                  sample_key:str = None,
-                  score_key:str = None,
-                  liana_res: (DataFrame or None) = None,
-                  source_key:str = P.source,
-                  target_key:str = P.target,
-                  ligand_key:str = P.ligand_complex,
-                  receptor_key:str = P.receptor_complex,
-                  uns_key:str = K.uns_key,
-                  non_expressed_fill:(float or None) = None,
-                  inverse_fun: callable = V.inverse_fun,
-                  non_negative:bool = True,
-                  return_dict:bool = False,
+def to_tensor_c2c(adata: AnnData = None,
+                  sample_key: str = None,
+                  score_key: str = None,
+                  liana_res: DataFrame | None = None,
+                  source_key: str = P.source,
+                  target_key: str = P.target,
+                  ligand_key: str = P.ligand_complex,
+                  receptor_key: str = P.receptor_complex,
+                  uns_key: str = K.uns_key,
+                  non_expressed_fill: float | None = None,
+                  inverse_fun: Callable = V.inverse_fun,
+                  non_negative: bool = True,
+                  return_dict: bool = False,
                   **kwargs
                   ):
     """
@@ -43,19 +45,28 @@ def to_tensor_c2c(adata:AnnData=None,
     %(ligand_key)s
     %(receptor_key)s
     %(uns_key)s
-    %(inverse_fun)s
-    non_expressed_fill : `float`, optional (default: None)
+    non_expressed_fill
         Value to fill for non-expressed ligand-receptor pairs.
-    non_negative : `bool`, optional (default: True)
+    %(inverse_fun)s
+    non_negative
         Whether to make the tensor non-negative.
-    return_dict : `bool`, optional (default: False)
+    return_dict
         Whether to return a dictionary of tensors.
-    **kwargs : keyword arguments to pass to Tensor-cell2cell's `cell2cell.tensor.external_scores.dataframes_to_tensor` function.
+    **kwargs
+        keyword arguments to pass to Tensor-cell2cell's `cell2cell.tensor.external_scores.dataframes_to_tensor` function.
 
     Returns
     -------
     Returns a tensor of shape (n_samples, n_senders, n_receivers, n_interactions) or a dictionary of tensors if `return_dict` is True.
 
+    Raises
+    ------
+    AttributeError
+        If neither `liana_res` or `adata` are provided.
+    AssertionError
+        If `uns_key` is not provided when given an `adata` instance.
+    ValueError
+        If any of the provided keys (`sample_key`, `source_key`, `target_key`, `ligand_key` or `receptor_key`) are not found in `liana_res.uns[uns_key]` or if input data contains duplicates.
 
     """
     # check if cell2cell is installed
@@ -68,7 +79,7 @@ def to_tensor_c2c(adata:AnnData=None,
         liana_res = adata.uns[uns_key].copy()
     if liana_res is not None:
         liana_res = liana_res.copy()
-    if (liana_res is None) & (adata is None):
+    if (liana_res is None) & (adata is None): # XXX: Isn't this redundant with AttributeError above?
         raise ValueError('`liana_res` or `adata` must be provided!')
 
     keys = np.array([sample_key, source_key, target_key, ligand_key, receptor_key])

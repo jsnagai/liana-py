@@ -9,7 +9,27 @@ from liana.method.sp._utils import _spatialdm_weight_norm, _zscore
 
 
 class GlobalFunction:
-    instances = {}
+    """
+    Metaclass for wrapping global functions
+
+    Parameters
+    ----------
+    fun
+        The function itself
+    name
+        The name of the function
+
+    Attributes
+    ----------
+    fun
+        The function itself
+    name
+        The name of the function
+    pvals_name
+        The name of the function with `'_pvals'` appended
+    """
+
+    instances: dict = {}
 
     def __init__(self, fun, name):
         self.fun = fun
@@ -49,7 +69,6 @@ class GlobalFunction:
 
         return global_pvals
 
-
     def _zscore_pvals(self,
                       weight,
                       global_stat,
@@ -78,15 +97,39 @@ class GlobalFunction:
 
 
     def __call__(self,
-                 xy_stats,
-                 x_mat,
-                 y_mat,
-                 weight,
-                 seed,
-                 n_perms,
-                 mask_negatives,
-                 verbose
+                 xy_stats: dict[str, np.ndarray],
+                 x_mat: np.ndarray,
+                 y_mat: np.ndarray,
+                 weight: np.ndarray,
+                 seed: int,
+                 n_perms: int,
+                 mask_negatives: bool,
+                 verbose: bool
                  ):
+        """
+        Function caller wrapper
+
+        Parameters
+        ----------
+        xy_stats
+            Dictionary where stats and p-values are stored
+        x_mat
+            2D array with x variables
+        y_mat
+            2D array with y variables
+        weight
+            Connectivity weight matrix
+        %(seed)s
+        %(n_perms)s
+        %(mask_negatives)s
+        %(verbose)s
+
+        Raises
+        ------
+        ValueError
+            If the given function is not supported
+
+        """
         if self.name == 'morans':
             x_mat = _zscore(x_mat, axis=0, global_r=True)
             y_mat = _zscore(y_mat, axis=0, global_r=True)
@@ -134,5 +177,5 @@ def _global_r(x_mat, y_mat, weight):
 def _global_l(x_mat, y_mat, weight):
     return ((weight @ x_mat) * y_mat).sum(axis=0) / weight.sum()
 
-_global_r = GlobalFunction(_global_r, 'morans')
-_global_l = GlobalFunction(_global_l, 'lee')
+_global_r = GlobalFunction(_global_r, 'morans')  # type: ignore[assignment]
+_global_l = GlobalFunction(_global_l, 'lee')  # type: ignore[assignment]

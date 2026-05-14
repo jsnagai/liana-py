@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-import anndata
-import pandas
+from collections.abc import Callable
+
+from anndata import AnnData
+from matplotlib.figure import Figure
+from pandas import DataFrame
 from plotnine import (
     aes,
     element_rect,
@@ -23,27 +26,27 @@ from liana.plotting._common import _check_var, _filter_by, _get_top_n, _invert_s
 
 
 @d.dedent
-def dotplot(adata: anndata.AnnData = None,
-            uns_key = K.uns_key,
-            liana_res: pandas.DataFrame = None,
+def dotplot(adata: AnnData = None,
+            uns_key: str = K.uns_key,
+            liana_res: DataFrame = None,
             colour: str = None,
             size: str = None,
-            source_labels: list = None,
-            target_labels: list = None,
+            source_labels: list[str] = None,
+            target_labels: list[str] = None,
             top_n: int = None,
             orderby: str | None = None,
             orderby_ascending: bool | None = None,
             orderby_absolute: bool = False,
-            filter_fun: callable = None,
+            filter_fun: Callable = None,
             ligand_complex: str | None = None,
             receptor_complex: str | None = None,
             inverse_colour: bool = False,
             inverse_size: bool = False,
             cmap: str = V.cmap,
-            size_range: tuple = (2, 9),
-            figure_size: tuple = (8, 6),
-            return_fig=V.return_fig
-            ) -> ggplot:
+            size_range: tuple[float, float] = (2, 9),
+            figure_size: tuple[float, float] = (8, 6),
+            return_fig: bool = V.return_fig
+            ) -> Figure:
     """
     Dotplot interactions by source and target cells
 
@@ -68,10 +71,11 @@ def dotplot(adata: anndata.AnnData = None,
     %(cmap)s
     %(size_range)s
     %(figure_size)s
+    %(return_fig)s
 
     Returns
     -------
-    A `plotnine.ggplot` instance
+    The resulting dotplot
 
     """
     liana_res = _prep_liana_res(adata=adata,
@@ -125,23 +129,23 @@ def dotplot(adata: anndata.AnnData = None,
 
 
 @d.dedent
-def dotplot_by_sample(adata: anndata.AnnData  = None,
+def dotplot_by_sample(adata: AnnData = None,
                       uns_key: str = K.uns_key,
-                      liana_res: pandas.DataFrame = None,
+                      liana_res: DataFrame = None,
                       sample_key: str = 'sample',
-                      colour: str  = None,
+                      colour: str = None,
                       size: str = None,
                       inverse_colour: bool = False,
                       inverse_size: bool = False,
                       source_labels: str | None = None,
                       target_labels: str | None = None,
-                      ligand_complex: list | str | None = None,
-                      receptor_complex: list | str | None = None,
-                      size_range: tuple = (2, 9),
+                      ligand_complex: list[str] | str | None = None,
+                      receptor_complex: list[str] | str | None = None,
+                      size_range: tuple[float, float] = (2, 9),
                       cmap: str = V.cmap,
-                      figure_size: tuple = (8, 6),
+                      figure_size: tuple[float, float] = (8, 6),
                       return_fig: bool = V.return_fig
-                      ):
+                      ) -> Figure:
     """
     A dotplot of interactions by sample
 
@@ -163,10 +167,11 @@ def dotplot_by_sample(adata: anndata.AnnData  = None,
         %(size_range)s
         %(cmap)s
         %(figure_size)s
+        %(return_fig)s
 
     Returns
     -------
-    Returns a ggplot for the specified interactions by sample.
+    Returns a dot plot for the specified interactions by sample.
 
     """
     liana_res = _prep_liana_res(adata=adata,

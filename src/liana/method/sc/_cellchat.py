@@ -52,4 +52,4 @@ _cellchat = MethodMeta(method_name="CellChat",
                        )
 
 cellchat = Method(_method=_cellchat)
-cellchat._kh = 0.5
+cellchat._kh = 0.5  # type: ignore[attr-defined]

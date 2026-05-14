@@ -1,25 +1,51 @@
+from typing import Callable
+
 import numpy as np
+from pandas import DataFrame
 
-from liana.method.sc._Method import Method, MethodMeta, _show_methods
-from liana.method.sc._rank_aggregate import AggregateClass, _rank_aggregate_meta as aggregate_meta
-from liana.method.sc import cellphonedb, connectome, logfc, natmi, singlecellsignalr, geometric_mean, cellchat, scseqcomm
-
-from liana.method.sp import bivariate, genericMistyData, lrMistyData, MistyData, compute_global_specificity, inflow
-from liana.method.fun._causalnet import find_causalnet, build_prior_network
-from liana.method.fun._estimate_metalinks import estimate_metalinks
 from liana._constants import DefaultValues as V
+from liana.method.fun._causalnet import build_prior_network, find_causalnet
+from liana.method.fun._estimate_metalinks import estimate_metalinks
+from liana.method.sc import (
+    cellchat,
+    cellphonedb,
+    connectome,
+    geometric_mean,
+    logfc,
+    natmi,
+    scseqcomm,
+    singlecellsignalr,
+)
+from liana.method.sc._Method import Method, MethodMeta, _show_methods
+from liana.method.sc._rank_aggregate import AggregateClass
+from liana.method.sc._rank_aggregate import _rank_aggregate_meta as aggregate_meta
+from liana.method.sp import MistyData, bivariate, compute_global_specificity, genericMistyData, inflow, lrMistyData
 
 # callable consensus instance
 _methods = [cellphonedb, connectome, logfc, natmi, singlecellsignalr]
-rank_aggregate = AggregateClass(aggregate_meta, methods=_methods)
+rank_aggregate = AggregateClass(aggregate_meta, methods=_methods)  # type: ignore[arg-type]
 
 
-def show_methods():
-    """Shows methods available in LIANA"""
+def show_methods() -> DataFrame:
+    """
+    Shows methods available in LIANA
+
+    Returns
+    -------
+    Table of methods available.
+
+    """
     return _show_methods(_methods + [rank_aggregate, geometric_mean, scseqcomm, cellchat])
 
-def get_method_scores():
-    """Returns a dict of all scoring functions, with a boolean indicating whether the score is ascending or not"""
+def get_method_scores() -> dict:
+    """
+    Shows the scoring methods available.
+
+    Returns
+    -------
+    Dictionary of all scoring functions, with a boolean indicating whether the score is ascending or not
+
+    """
     instances = np.array(MethodMeta.instances)
     relevant = np.array([(isinstance(instance, Method)) | (isinstance(instance, AggregateClass)) for instance in instances])
     instances = instances[relevant]
@@ -30,8 +56,24 @@ def get_method_scores():
     scores = {**specificity_scores, **magnitude_scores}
     return scores
 
-def process_scores(liana_res, score_key, inverse_fun=V.inverse_fun):
+def process_scores(liana_res: DataFrame,
+                   score_key: str,
+                   inverse_fun: Callable = V.inverse_fun
+                   ) -> DataFrame:
+    """
+    Processes and outputs a given score.
 
+    Parameters
+    ----------
+    %(liana_res)s
+    %(score_key)s
+    %(inverse_fun)s
+
+    Returns
+    -------
+    A `DataFrame` with the processed scores.
+
+    """
     df = liana_res.copy()
     scores = get_method_scores()
 

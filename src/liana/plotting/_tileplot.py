@@ -1,7 +1,9 @@
+from collections.abc import Callable
 
 import anndata as ad
 import pandas as pd
 import plotnine as p9
+from matplotlib.figure import Figure
 
 from liana._constants import DefaultValues as V
 from liana._constants import Keys as K
@@ -14,7 +16,7 @@ def tileplot(adata: ad.AnnData = None,
              liana_res: pd.DataFrame = None,
              fill: str = None,
              label: str = None,
-             label_fun: callable = None,
+             label_fun: Callable = None,
              source_labels: str | list[str] = None,
              target_labels: str | list[str] = None,
              ligand_complex: str | list[str] = None,
@@ -24,14 +26,14 @@ def tileplot(adata: ad.AnnData = None,
              orderby: str = None,
              orderby_ascending: bool = False,
              orderby_absolute: bool = True,
-             filter_fun: callable = None,
+             filter_fun: Callable = None,
              source_title=None,
              target_title=None,
              cmap: str = V.cmap,
              figure_size: tuple[float, float] = (5, 5),
              label_size: int = 12,
              return_fig: bool = V.return_fig
-             ):
+             ) -> Figure:
     """
     Tileplot interactions by source and target cells
 
@@ -60,14 +62,14 @@ def tileplot(adata: ad.AnnData = None,
     target_title
         Title for the target facet. Default is 'Target'
     %(cmap)s
+    %(figure_size)s
     label_size
         Size of the label text
-    %(figure_size)s
     %(return_fig)s
 
     Returns
     -------
-    A `plotnine.ggplot` instance
+    The resulting tileplot
 
     """
     liana_res = _prep_liana_res(adata=adata,

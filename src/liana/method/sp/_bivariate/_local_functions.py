@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 import numba as nb
 import numpy as np
 from scipy.sparse import issparse
@@ -8,11 +10,41 @@ from liana.method.sp._utils import _spatialdm_weight_norm, _zscore
 
 
 class LocalFunction:
-    """Class representing information about bivariate spatial functions."""
+    """
+    Class representing information about bivariate spatial functions.
 
-    instances = {}
+    Parameters
+    ----------
+    name
+        Name of the function
+    metadata
+        Short description for the function
+    fun
+        The actual function
+    reference
+        Reference/description for the function
 
-    def __init__(self, name, metadata, fun, reference=None):
+    Attributes
+    ----------
+    name
+        Name of the function
+    metadata
+        Short description for the function
+    fun
+        The actual function
+    reference
+        Reference/description for the function
+
+    """
+
+    instances: dict = {}
+
+    def __init__(self,
+                 name: str,
+                 metadata: str,
+                 fun: Callable,
+                 reference: str = None
+                 ):
         self.name = name
         self.metadata = metadata
         self.fun = fun
@@ -21,14 +53,38 @@ class LocalFunction:
         LocalFunction.instances[name] = self
 
     def __call__(self,
-                 x_mat,
-                 y_mat,
-                 weight,
-                 n_perms,
-                 seed,
-                 mask_negatives,
-                 verbose
-                 ):
+                 x_mat: np.ndarray,
+                 y_mat: np.ndarray,
+                 weight: np.ndarray,
+                 n_perms: int,
+                 seed: int,
+                 mask_negatives: bool,
+                 verbose: bool
+                 ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Function caller wrapper
+
+        Parameters
+        ----------
+        x_mat
+            2D array with x variables
+        y_mat
+            2D array with y variables
+        weight
+            Connectivity weight matrix
+        %(n_perms)s
+        %(seed)s
+        %(mask_negatives)s
+        %(verbose)s
+
+        Returns
+        -------
+        local_scores
+            Matrix with the local scores
+        local_pvals
+            Matrix of resulting p-values
+
+        """
         if self.name == 'morans':
             x_mat = self._norm_max(x_mat)
             y_mat = self._norm_max(y_mat)
@@ -100,7 +156,13 @@ class LocalFunction:
 
         return local_pvals
 
-    def _zscore_pvals(self, x_mat, y_mat, local_truth, weight, mask_negatives):
+    def _zscore_pvals(self,
+                      x_mat: np.ndarray,
+                      y_mat: np.ndarray,
+                      local_truth: np.ndarray,
+                      weight: np.ndarray,
+                      mask_negatives: bool
+                      ) -> np.ndarray:
         """
         Local Moran's R analytical p-values as in spatialDM (Li et al., 2022)
 
@@ -110,10 +172,10 @@ class LocalFunction:
             2D array with x variables
         y_mat
             2D array with y variables
-        local_r
+        local_truth
             2D array with Local Moran's I
         weight
-            connectivity weights
+            Connectivity weights
         mask_negatives
             Whether to mask negative correlations pvalue
 
@@ -155,7 +217,7 @@ class LocalFunction:
         y_sigma
             Standard deviations for each y (e.g. std of all receptors)
         weight
-            connectivity weight matrix
+            Connectivity weight matrix
         spot_n
             number of spots/cells in the matrix
 
@@ -312,6 +374,9 @@ def _local_morans(x_mat, y_mat, weight):
         2D array with x variables
     y_mat
         2D array with y variables
+    weight
+        Connectivity weight matrix
+
 
     Returns
     -------
