@@ -157,18 +157,18 @@ def translate_resource(resource, map_df, columns=None, **kwargs):
     return resource
 
 
-def get_hcop_orthologs(url="https://ftp.ebi.ac.uk/pub/databases/genenames/hcop/human_mouse_hcop_fifteen_column.txt.gz",
+def get_hcop_orthologs(url="https://storage.googleapis.com/public-download-files/hcop/human_mouse_hcop_fifteen_column.txt.gz",
                        filename=None,
                        min_evidence=3,
                        columns = None
                        ):
     """
-    Simple function to download the HCOP file from the EBI FTP server and filter it by minimum evidence.
+    Simple function to download the HCOP file and filter it by minimum evidence.
 
     Parameters
     ----------
     url : str
-        URL of the HCOP file. See https://ftp.ebi.ac.uk/pub/databases/genenames/hcop/ for bulk download options besides human and mouse.
+        URL of the HCOP file. HGNC moved hosting from EBI FTP to Google Cloud Storage.
     filename : str
         Name of the file to save the HCOP file.
     min_evidence : int
@@ -190,8 +190,7 @@ def get_hcop_orthologs(url="https://ftp.ebi.ac.uk/pub/databases/genenames/hcop/h
     - Eyre, T.A., Wright, M.W., Lush, M.J. and Bruford, E.A., 2007. HCOP: a searchable database of human orthology predictions. Briefings in bioinformatics, 8(1), pp.2-5.
     - Yates, B., Gray, K.A., Jones, T.E. and Bruford, E.A., 2021. Updates to HCOP: the HGNC comparison of orthology predictions tool. Briefings in Bioinformatics, 22(6), p.bbab155.
 
-    For more information, please visit the HCOP website: https://www.genenames.org/tools/hcop/,
-    or alternatively check the bulk download FTP links page: https://ftp.ebi.ac.uk/pub/databases/genenames/hcop/
+    For more information, please visit the HCOP website: https://www.genenames.org/tools/hcop/
     """
     # check if exists
     if filename is None:
