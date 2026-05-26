@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.3 (26.05.2026)
+
+- Fixed top-level `import corneto` in `liana/method/fun/_causalnet.py` which caused ReadTheDocs builds to fail (`no module named liana.method`) because `corneto` is an optional dependency not installed in the doc environment. Removed the top-level import and the now-unnecessary `corneto.*` type annotations from function signatures; runtime loading already used `_check_if_installed("corneto")`.
+- Updated `inflow_score.ipynb` to use the new `target_organism='mouse'` parameter for `li.rs.get_hcop_orthologs` instead of the defunct EBI FTP `url`.
+
 ## 1.7.2 (14.05.2026)
 
 - Fixed `get_hcop_orthologs` to use the HGNC Google Cloud Storage bucket instead of the defunct EBI FTP mirror, resolving 404 errors in CI.
